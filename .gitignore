@@ -1,0 +1,16 @@
+# Trener ma własne repozytorium (GitHub PanDory1992/trener)
+trener/
+# Stan na żywo i logi (zmieniają się co chwilę)
+*.log
+live.json
+status.json
+notes.csv
+capture-notes
+__pycache__/
+# Binaria do odbudowania ze źródeł (zrodla/) i paczki
+*.vst3
+*.zip
+target/
+# Prywatne
+klucz-telefonu.txt
+trener-dane*.json

@@ -1,0 +1,24 @@
+Keystation Status 0.1.0 (06.11.2026) - stan routera Keystation na żywo w DAW
+
+INSTALACJA WTYCZKI
+1. Skopiuj cały folder "KeystationStatus.vst3" do:
+   C:\Program Files\Common Files\VST3\
+   (Windows zapyta o uprawnienia administratora.)
+2. Studio One: Opcje > Lokalizacje > Wtyczki VST > "Skanuj ponownie" albo restart Studio One.
+3. Wstaw "Keystation Status" jako insert na dowolnej ścieżce (np. Pianoteq).
+   Dźwięk przechodzi bez zmian. Okno wtyczki można przypiąć.
+
+ROUTER (tryb na żywo)
+Bez aktualizacji routera wtyczka i tak działa: czyta status.json (odświeżanie co 1 s).
+Na żywo (natychmiast po każdym przycisku i pedale) po uruchomieniu:
+   python apply_live_json.py C:\Users\mikit\AppData\Local\CodexPedalModes\pedal_router.py
+Skrypt robi kopię (pedal_router.before-live-json-20261106.py), jest bezpieczny
+przy ponownym uruchomieniu i sam prosi router o restart (plik restart-router).
+
+ROZBUDOWA
+src/live.rs - odczyt pliku live.json (nowe pola: tutaj)
+src/ui.rs   - wygląd (nowe pola/sekcje: tutaj)
+live.json ma numer wersji "v"; obie strony ignorują pola, których nie znają.
+Router już zapisuje ostatnią nutę ("last": note/raw/out) - gotowe pod kolejną wersję.
+Budowanie: cargo build --release --target x86_64-pc-windows-gnu
+(DLL -> KeystationStatus.vst3/Contents/x86_64-win/KeystationStatus.vst3)
