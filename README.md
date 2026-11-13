@@ -39,4 +39,4 @@ Keystation Pro 88 ──USB──> pedal_router.py
 ## Zasady
 - Przed zmianą routera lub nadzorcy: `git commit` (albo kopia `*.before-<co>-RRRRMMDD.py`), potem testy na Windows, potem „Router - restart.bat”.
 - Nie commitować: `klucz-telefonu.txt`, danych Trenera, logów, binariów `.vst3` i `.zip` (zbudować ze źródeł).
-- Most MCP do Studio One: repozytorium **PanDory1992/studio-one-mcp**, gałąź `miki-poprawki` (opis w `MIKI.md`).
+- Most MCP do Studio One: repozytorium **PanDory1992/studio-one-mcp**, gałąź `miki-0.4` (wersja 0.4.0 + poprawki, opis w `MIKI.md`; narzędzia `uszy_*` zostały w starej gałęzi `miki-poprawki`, Uszy nieużywane).
