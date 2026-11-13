@@ -16,14 +16,14 @@ Keystation Pro 88 ──USB──> pedal_router.py
 ## Pliki
 | Plik | Co robi |
 |---|---|
-| `pedal_router.py` | Router MIDI: rozdziela granie i sterowanie na dwa porty, tryby pedału (sustain / sostenuto, una corda), miękkie puszczanie sustainu (`release-ms`), krzywe velocity, „kontekstowe 1” (najcichsze uderzenia), łata na dziurę 1–40 w czarnych klawiszach, nagrywanie surowych zdarzeń (`capture-notes` → `notes/notes-RRRR-Wtt.csv`, nowy plik co tydzień, zapis w tle). Opis na początku pliku. |
-| `udp_bus.py` | Szyna UDP (protokół v1, JSON w datagramach, tylko localhost). Słuchacz wysyła `hello` co ≤5 s (inaczej wypada po 10 s), dostaje `welcome` + `state`; zdarzenia `note`, `pedal`, `state`, `button`; polecenia `set` (tryb, una corda, czułość, „jedynki”) i `play` (granie przez router). Opis protokołu na początku pliku. |
+| `pedal_router.py` | Router MIDI: rozdziela granie i sterowanie na dwa porty, tryby pedału (sustain / sostenuto, una corda), miękkie puszczanie sustainu (`release-ms`), krzywe velocity, „kontekstowe 1” (najcichsze uderzenia), łata na dziurę 1–40 w czarnych klawiszach, nagrywanie surowych zdarzeń (`capture-notes` → `notes/notes-RRRR-Wtt.csv`, nowy plik co tydzień, zapis w tle), **półpedał** (od 13.11: pedał wciśnięty w sustainie wysyła CC64 = głębokość zamiast 127; głębokość ustawia gałka **B17**, która nie wysyła już CC89) i **filtr odbić** (note-off czeka 15 ms; ten sam klawisz uderzony w tym czasie to odbicie styku, oba zdarzenia znikają). Opis na początku pliku. |
+| `udp_bus.py` | Szyna UDP (protokół v1, JSON w datagramach, tylko localhost). Słuchacz wysyła `hello` co ≤5 s (inaczej wypada po 10 s), dostaje `welcome` + `state`; zdarzenia `note`, `pedal`, `state`, `button`; polecenia `set` (tryb, una corda, czułość, „jedynki”, `half_pedal`, `half_depth` 1–127, `debounce`) i `play` (granie przez router). Opis protokołu na początku pliku. |
 | `keystation_supervisor.py` | Nadzorca uruchamiany przy logowaniu: pilnuje routera, mostu Studio One (`studio_one_bridge.py`; kopia w `studio-one-setup/`, oryginał poza repo, patrz `studio-one-setup/SKAD.md`) i serwera Trenera (port 47810). Każdy start, wyjście i błąd w `supervisor.log`. |
 | `szyna_podglad.py` | Podgląd szyny na żywo (konsola). |
 | `velocity-map*.json` | Krzywe velocity `{"white":[128], "black":[128]}` (indeks = surowa siła). `velocity-map.json` jest aktywna; `acoustic` / `light` / `heavy` to czułości przełączane z wtyczki albo szyny; `v1…v4` to historia kalibracji. `kalibracja-1-surowe-C1-20261028.json` to surowe pomiary. |
 | `uszy/` | Stan wtyczek Uszy (pomiary, wzmocnienia, nazwy kanałów). |
 | `uszy-plugin/zrodla/` | Źródła wtyczki VST3 **Uszy** (Rust, nih-plug): pomiar LUFS i wzmocnienie, sterowane przez most MCP (`uszy_*`). Budowanie: `README.md` w środku. |
-| `keystation-status-plugin*/`, `KeystationStatus-0.2.1/` | Źródła wtyczki VST3 **Keystation Status** (Rust): stan routera na żywo w Studio One (tryb, pedał, czułość), czyta `live.json` / `status.json`. `CZYTAJ.txt` opisuje instalację. |
+| `keystation-status-plugin*/`, `KeystationStatus-0.2.1/`, `KeystationStatus-0.3.0/` | Źródła wtyczki VST3 **Keystation Status** (Rust): stan routera na żywo w Studio One (tryb, pedał, czułość; od 0.3.0 półpedał z pokrętłem, które pokazuje pozycję gałki B17, i filtr odbić z licznikiem), czyta `live.json` / `status.json`. Instalacja 0.3.0: zamknij Studio One, „Zainstaluj Keystation Status.bat” w folderze wersji. |
 | `test_pedal_router.py`, `test_udp_bus.py` | Testy (pytest). Na Windows, bo `vendor/rtmidi` to binarka Windows. |
 | `vendor/` | python-rtmidi 1.5.8 (Windows). |
 | `Router - restart.bat`, `Nadzorca - restart.bat`, `Szyna - podglad.bat`, `install-autostart.ps1`, `startup-backup/` | Restart routera (plik `restart-router`), restart nadzorcy, podgląd szyny, autostart z Windows. |
@@ -31,7 +31,7 @@ Keystation Pro 88 ──USB──> pedal_router.py
 | `mapa-06.11-z-zalecane-light.pdf` | Mapa velocity klawiatury. |
 
 ## Pliki ustawień w locie (nie w gicie)
-`touch-mode`, `ones-mode`, `release-ms`, `debug-raw.off`, `restart-router`, `live.json`, `status.json`, `live-cmd.json`, `notes/`, logi. Router czyta je na bieżąco; zmienia je wtyczka Keystation Status albo szyna (`set`).
+`touch-mode`, `ones-mode`, `release-ms`, `router-options.json` (półpedał, głębokość, filtr odbić), `debug-raw.off`, `restart-router`, `live.json`, `status.json`, `live-cmd.json`, `notes/`, logi. Router czyta je na bieżąco; zmienia je wtyczka Keystation Status albo szyna (`set`).
 
 ## Kanały MIDI (umowa z Trenerem i projektem Studio One)
 1 twoje pianino (tylko klawiatura), 2 bas zespołu, 3 wszystko, co Trener gra na pianinie, 10 perkusja, 16 klik.
