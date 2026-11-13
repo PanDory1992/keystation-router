@@ -22,3 +22,4 @@ debug-raw.off*
 restart-router
 live-cmd.json
 notes/
+router-options.json
