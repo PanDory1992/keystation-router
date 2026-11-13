@@ -559,13 +559,41 @@ def run():
 
     threading.Thread(target=command_watcher, name="plugin-cmd", daemon=True).start()
 
-    def capture(message, routed):
-        if not CAPTURE_FLAG.exists() or len(message) < 3 or message[0] & 0xF0 not in (0x80, 0x90):
+    # 13.11: notes.csv is written by its own thread, never inside the MIDI callback (opening a 5 MB file per note
+    # could block for a second, e.g. while the antivirus scans it, and every following note waited). Column 6 =
+    # the driver's delta time (s) to the previous MIDI message, to tell late delivery from slow playing.
+    capture_q = []
+    capture_lock = threading.Lock()
+    capture_on = [CAPTURE_FLAG.exists()]
+
+    def capture(message, routed, delta=0.0):
+        if not capture_on[0] or len(message) < 3 or message[0] & 0xF0 not in (0x80, 0x90):
             return
         out = next((p[2] for d, p in routed if p[0] & 0xF0 == 0x90 and len(p) >= 3), "")
         kind = "on" if message[0] & 0xF0 == 0x90 and message[2] > 0 else "off"
-        with CAPTURE_FILE.open("a", encoding="ascii") as f:
-            f.write(f"{time.time():.4f},{kind},{message[1]},{message[2]},{out}\n")
+        with capture_lock:
+            capture_q.append(f"{time.time():.4f},{kind},{message[1]},{message[2]},{out},{delta:.4f}\n")
+
+    def capture_writer():
+        while not done.is_set():
+            time.sleep(0.5)
+            capture_on[0] = CAPTURE_FLAG.exists()
+            with capture_lock:
+                lines = capture_q[:]
+                capture_q.clear()
+            if lines:
+                t0 = time.perf_counter()
+                try:
+                    with CAPTURE_FILE.open("a", encoding="ascii") as f:
+                        f.writelines(lines)
+                except OSError:
+                    pass
+                took = time.perf_counter() - t0
+                if took > 0.2:
+                    logging.warning("SLOW notes.csv write: %.0f ms", took * 1000)
+
+    threading.Thread(target=capture_writer, name="capture", daemon=True).start()
+    late = {"wall": 0.0, "logged": 0.0}
 
     def dispatch(message):
         with io_lock:
@@ -612,9 +640,20 @@ def run():
         nonlocal messages, errors, last_input
         message, _delta = event
         try:
+            now = time.time()
+            t0 = time.perf_counter()
             old_mode = mapper.mode
             routed = dispatch(message)
-            capture(message, routed)
+            took = time.perf_counter() - t0
+            if took > 0.05:
+                logging.warning("SLOW dispatch: %.0f ms (io_lock or a virtual port blocked)", took * 1000)
+            # the driver says this event came _delta s after the previous one, but it reached us almost together
+            # with it: MIDI was held up before the router (USB / Windows MIDI)
+            if _delta > 0.15 and now - late["wall"] < 0.01 and now - late["logged"] > 5:
+                late["logged"] = now
+                logging.warning("LATE MIDI from driver: %.0f ms apart on the keyboard, arrived %.1f ms apart", _delta * 1000, (now - late["wall"]) * 1000)
+            late["wall"] = now
+            capture(message, routed, _delta)
             publish_bus(message, routed)
             if len(message) >= 3 and message[0] & 0xF0 == 0x90 and message[2] > 0:
                 out = next((p[2] for d, p in routed if p[0] & 0xF0 == 0x90 and len(p) >= 3), message[2])
@@ -723,7 +762,11 @@ def run():
                     if midi_in is None:
                         candidate.close_port()
                 else:
+                    t0 = time.perf_counter()
                     names = midi_in.get_ports()
+                    took = time.perf_counter() - t0
+                    if took > 0.1:
+                        logging.warning("SLOW get_ports (MIDI device scan): %.0f ms", took * 1000)
                     if input_label not in names:
                         logging.warning("Physical input disappeared")
                         midi_in.close_port()
