@@ -30,6 +30,7 @@ A file named
 from __future__ import annotations
 
 import ctypes
+import datetime
 import re
 import json
 import logging
@@ -387,6 +388,13 @@ def run():
     if not mutex or ctypes.get_last_error() == 183:
         raise RuntimeError("Pedal router is already running")
     logging.info("STARTING pid %s", os.getpid())
+    try:          # 13.11: HIGH_PRIORITY_CLASS, so Windows serves the MIDI path before ordinary programs
+        kernel.SetPriorityClass.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+        kernel.GetCurrentProcess.restype = ctypes.c_void_p
+        if kernel.SetPriorityClass(kernel.GetCurrentProcess(), 0x00000080):
+            logging.info("Process priority: high")
+    except Exception:
+        logging.exception("Could not raise process priority")
     ports = {}
     for attempt in range(1, 151):          # right after boot the driver may not be ready yet
         try:
@@ -584,7 +592,7 @@ def run():
             if lines:
                 t0 = time.perf_counter()
                 try:
-                    with CAPTURE_FILE.open("a", encoding="ascii") as f:
+                    with capture_file().open("a", encoding="ascii") as f:
                         f.writelines(lines)
                 except OSError:
                     pass
@@ -592,8 +600,16 @@ def run():
                 if took > 0.2:
                     logging.warning("SLOW notes.csv write: %.0f ms", took * 1000)
 
+    def capture_file():
+        # 13.11: one file per ISO week (notes/notes-2026-W46.csv): small files, easy week-to-week comparisons
+        y, w, _ = datetime.date.today().isocalendar()
+        folder = ROOT / "notes"
+        folder.mkdir(exist_ok=True)
+        return folder / f"notes-{y}-W{w:02d}.csv"
+
     threading.Thread(target=capture_writer, name="capture", daemon=True).start()
     late = {"wall": 0.0, "logged": 0.0}
+    scan_tick = [0]
 
     def dispatch(message):
         with io_lock:
@@ -762,18 +778,21 @@ def run():
                     if midi_in is None:
                         candidate.close_port()
                 else:
-                    t0 = time.perf_counter()
-                    names = midi_in.get_ports()
-                    took = time.perf_counter() - t0
-                    if took > 0.1:
-                        logging.warning("SLOW get_ports (MIDI device scan): %.0f ms", took * 1000)
-                    if input_label not in names:
-                        logging.warning("Physical input disappeared")
-                        midi_in.close_port()
-                        midi_in = None
-                        with io_lock:
-                            for packet in mapper.release_all():
-                                send(PLAY, packet)
+                    # 13.11: look for the keyboard every 3 s, not every second (scanning MIDI devices is the heaviest call)
+                    scan_tick[0] += 1
+                    if scan_tick[0] % 3 == 0:
+                        t0 = time.perf_counter()
+                        names = midi_in.get_ports()
+                        took = time.perf_counter() - t0
+                        if took > 0.1:
+                            logging.warning("SLOW get_ports (MIDI device scan): %.0f ms", took * 1000)
+                        if input_label not in names:
+                            logging.warning("Physical input disappeared")
+                            midi_in.close_port()
+                            midi_in = None
+                            with io_lock:
+                                for packet in mapper.release_all():
+                                    send(PLAY, packet)
                 with io_lock:
                     publish_state(midi_in is not None)
                 STATUS_FILE.write_text(json.dumps({
