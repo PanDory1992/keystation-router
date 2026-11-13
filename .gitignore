@@ -14,3 +14,10 @@ target/
 # Prywatne
 klucz-telefonu.txt
 trener-dane*.json
+# Ustawienia w locie (zmienia je wtyczka albo szyna)
+touch-mode
+ones-mode
+release-ms
+debug-raw.off*
+restart-router
+live-cmd.json
