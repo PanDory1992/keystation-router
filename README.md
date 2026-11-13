@@ -18,7 +18,7 @@ Keystation Pro 88 ──USB──> pedal_router.py
 |---|---|
 | `pedal_router.py` | Router MIDI: rozdziela granie i sterowanie na dwa porty, tryby pedału (sustain / sostenuto, una corda), miękkie puszczanie sustainu (`release-ms`), krzywe velocity, „kontekstowe 1” (najcichsze uderzenia), łata na dziurę 1–40 w czarnych klawiszach, nagrywanie surowych zdarzeń (`capture-notes` → `notes.csv`). Opis na początku pliku. |
 | `udp_bus.py` | Szyna UDP (protokół v1, JSON w datagramach, tylko localhost). Słuchacz wysyła `hello` co ≤5 s (inaczej wypada po 10 s), dostaje `welcome` + `state`; zdarzenia `note`, `pedal`, `state`, `button`; polecenia `set` (tryb, una corda, czułość, „jedynki”) i `play` (granie przez router). Opis protokołu na początku pliku. |
-| `keystation_supervisor.py` | Nadzorca uruchamiany przy logowaniu: pilnuje routera, mostu Studio One (`studio_one_bridge.py`, leży w folderze `studio-one-setup` poza tym repo) i serwera Trenera (port 47810). Każdy start, wyjście i błąd w `supervisor.log`. |
+| `keystation_supervisor.py` | Nadzorca uruchamiany przy logowaniu: pilnuje routera, mostu Studio One (`studio_one_bridge.py`; kopia w `studio-one-setup/`, oryginał poza repo, patrz `studio-one-setup/SKAD.md`) i serwera Trenera (port 47810). Każdy start, wyjście i błąd w `supervisor.log`. |
 | `szyna_podglad.py` | Podgląd szyny na żywo (konsola). |
 | `velocity-map*.json` | Krzywe velocity `{"white":[128], "black":[128]}` (indeks = surowa siła). `velocity-map.json` jest aktywna; `acoustic` / `light` / `heavy` to czułości przełączane z wtyczki albo szyny; `v1…v4` to historia kalibracji. `kalibracja-1-surowe-C1-20261028.json` to surowe pomiary. |
 | `uszy/` | Stan wtyczek Uszy (pomiary, wzmocnienia, nazwy kanałów). |
