@@ -32,7 +32,7 @@ def test_playing_goes_to_play_port():
     assert m.route([0xC0, 4]) == [(PLAY, bytes([0xB0, 67, 127]))]
 
 
-def test_all_24_sound_knobs_reach_instruments_on_unique_ccs():
+def test_all_23_sound_knobs_reach_instruments_on_unique_ccs():
     m = PedalMapper()
     out = []
     for raw in list(PAN_KNOB_CC) + list(KNOB_CC):
@@ -42,7 +42,7 @@ def test_all_24_sound_knobs_reach_instruments_on_unique_ccs():
     (d1, p1), = m.route([0xD0, 20]); (d2, p2), = m.route([0xB0, 6, 20])
     assert d1 == d2 == PLAY
     out += [p1[1], p2[1]]
-    assert len(out) == len(set(out)) == 24
+    assert len(out) == len(set(out)) == 23   # B17 is the half-pedal knob since 13.11
     assert m.route([0xB0, 100, 0]) == [] and m.route([0xB0, 101, 0]) == []
 
 
@@ -260,3 +260,81 @@ def test_touch_buttons_switch_maps_and_are_consumed():
     assert m.route([0xC0, 10]) == []                 # acoustic missing -> ignored, still consumed
     assert m.touch_mode == "light"
     assert m.route([0xC0, 8]) == [(CONTROL, bytes([0xC0, 8]))]   # C52 Listen Bus untouched
+
+
+# --- half pedal and debounce (13.11) -----------------------------------------------
+from pedal_router import HALF_PEDAL_KNOB_CC, load_options
+
+
+def test_half_pedal_sends_depth_and_ramps_from_it():
+    m = PedalMapper(); m.set_half(True, 70)
+    assert m.route([0xB0, 64, 127]) == [(PLAY, bytes([0xB0, 64, 70]))]
+    assert m.route([0xB0, 64, 0]) == []
+    (_, cc, values, _), = m.take_ramps()
+    assert cc == 64 and values[0] < 70 and values[-1] == 0
+
+
+def test_half_pedal_off_is_full_and_sostenuto_untouched():
+    m = PedalMapper(); m.set_half(False, 70)
+    assert m.route([0xB0, 64, 127]) == [(PLAY, bytes([0xB0, 64, 127]))]
+    m = PedalMapper(); m.set_half(True, 70); m.route([0xC0, 3])
+    assert m.route([0xB0, 64, 127]) == [(PLAY, bytes([0xB0, 66, 127]))]
+
+
+def test_b17_knob_moves_depth_live_and_is_consumed():
+    m = PedalMapper(); m.set_half(True)
+    m.route([0xB0, 64, 127])
+    assert m.route([0xB0, HALF_PEDAL_KNOB_CC, 50]) == [(PLAY, bytes([0xB0, 64, 50]))]
+    assert m.half_depth == 50 and m.half_knob == 50
+    m.set_half(False)
+    assert m.route([0xB0, HALF_PEDAL_KNOB_CC, 90]) == []      # pedal is full now, nothing to change
+    assert m.half_depth == 90
+
+
+def test_switching_half_pedal_while_held_changes_level_at_once():
+    m = PedalMapper(); m.route([0xB0, 64, 127])
+    assert m.set_half(True, 60) == [bytes([0xB0, 64, 60])]
+    assert m.set_half(False) == [bytes([0xB0, 64, 127])]
+
+
+def test_mode_switch_keeps_half_pedal_level_right():
+    m = PedalMapper(); m.set_half(True, 60); m.route([0xC0, 3])
+    m.route([0xB0, 64, 127])
+    assert m.route([0xC0, 2]) == [(PLAY, bytes([0xB0, 66, 0])), (PLAY, bytes([0xB0, 64, 60]))]
+
+
+def test_debounce_drops_bounce_and_keeps_note():
+    m = PedalMapper(); m.set_debounce(True)
+    m.route([0x90, 60, 80])
+    assert m.route([0x80, 60, 0]) == []
+    assert m.last_event == "deferred"
+    (ch, note, gen), = m.take_offs()
+    assert m.route([0x90, 60, 30]) == [] and m.bounces == 1 and m.last_event == "bounce"
+    assert m.flush_off(ch, note, gen) is None and 60 in m.active_notes[0]
+
+
+def test_debounce_sends_off_when_no_bounce():
+    m = PedalMapper(); m.set_debounce(True)
+    m.route([0x90, 60, 80]); m.route([0x90, 60, 0])
+    (ch, note, gen), = m.take_offs()
+    assert m.flush_off(ch, note, gen) == bytes([0x90, 60, 0])
+    assert 60 not in m.active_notes[0]
+    assert m.route([0x90, 60, 70]) == [(PLAY, bytes([0x90, 60, 70]))]
+
+
+def test_debounce_off_is_instant_and_turning_off_flushes():
+    m = PedalMapper()
+    m.route([0x90, 60, 80])
+    assert m.route([0x80, 60, 0]) == [(PLAY, bytes([0x80, 60, 0]))]
+    m.set_debounce(True); m.route([0x90, 61, 80]); m.route([0x80, 61, 0])
+    assert m.set_debounce(False) == [bytes([0x80, 61, 0])]
+    m = PedalMapper(); m.set_debounce(True); m.route([0x90, 62, 80]); m.route([0x80, 62, 0])
+    assert bytes([0x80, 62, 0]) in m.release_all() and not m.pending_offs
+
+
+def test_options_load_and_validate(tmp_path):
+    f = tmp_path / "o.json"
+    f.write_text('{"half_pedal": true, "half_depth": 300, "debounce": "yes"}')
+    m = PedalMapper(); m.load(load_options(f))
+    assert m.half_pedal and m.half_depth == 127 and not m.debounce
+    assert load_options(tmp_path / "missing.json") == {}

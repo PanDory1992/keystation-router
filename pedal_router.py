@@ -24,7 +24,12 @@ measure". Instead of a fixed ppp, it gets one dynamic step below the level of
 the phrase being played (running average of the last notes), never above
 ONES_CAP; after a pause it is plain ppp. File "ones-mode" = "ppp" turns it off.
 A file named
-"capture-notes" makes the router append every raw key event to notes.csv.
+"capture-notes" makes the router append every raw key event to notes/notes-RRRR-Wtt.csv.
+Half pedal (13.11): the BFS-40 is an on/off switch; with "half_pedal" on, pedal down in
+sustain mode sends CC64 = half_depth instead of 127. Knob B17 (CC95, was CC89) sets the
+depth. Debounce (13.11): with "debounce" on, a note-off waits DEBOUNCE_S; a note-on of the
+same key inside that window is contact bounce, so both are dropped. Both switches live in
+"router-options.json" and can be changed from the plugin or the UDP bus ("set").
 """
 
 from __future__ import annotations
@@ -96,6 +101,18 @@ CAPTURE_FILE = ROOT / "notes.csv"
 # atomically on every change and once a second. Readers must ignore unknown fields.
 LIVE_FILE = ROOT / "live.json"
 LIVE_MIN_GAP_S = 0.05
+OPTIONS_FILE = ROOT / "router-options.json"   # 13.11: {"half_pedal","half_depth","debounce"}
+HALF_PEDAL_KNOB_CC = 95  # physical B17
+DEFAULT_HALF_DEPTH = 80  # about 63 %, the middle of the half-pedal zone in Pianoteq
+DEBOUNCE_S = 0.015       # 13.11 data: off->on of the same key under 15 ms = 30 of 92 513 notes
+
+
+def load_options(path=None) -> dict:
+    try:
+        data = json.loads((path or OPTIONS_FILE).read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
 # Commands from the plugin (06.11): {"v":1,"id":..,"set":{"mode","una_corda","touch","ones"}}
 CMD_FILE = ROOT / "live-cmd.json"
 CMD_POLL_S = 0.04
@@ -165,7 +182,8 @@ LISTEN_PROGRAM = 17      # Program Change sent to the control port for it
 MAIN_FADER_CC = 83              # C9 in the surface map
 RAW_MAIN_FADER_CC = 7           # physical C9 suspected to send CC7 (standard volume)
 # B10..B17 (were mixer pan) -> free CCs no surface control listens to.
-PAN_KNOB_CC = dict(zip((10, 2, 12, 13, 75, 76, 92, 95), (14, 15, 20, 21, 86, 87, 88, 89)))
+# B17 (CC95) is the half-pedal depth knob since 13.11, so it is not here.
+PAN_KNOB_CC = dict(zip((10, 2, 12, 13, 75, 76, 92), (14, 15, 20, 21, 86, 87, 88)))
 KNOB_CC = dict(zip((42, 34, 44, 45, 77, 78, 79, 94, 16, 17, 18, 19, 80, 81),
                    range(104, 118)))
 CHANNEL_PRESSURE_KNOB_CC = 118  # physical B32
@@ -204,6 +222,76 @@ class PedalMapper:
         self.ones_context = True
         self.phrase_level = [None] * 16   # running output level per channel
         self.phrase_time = [0.0] * 16
+        self.pedal_out = [0] * 16         # what was last sent for the pedal (half pedal: depth)
+        self.half_pedal = False
+        self.half_depth = DEFAULT_HALF_DEPTH
+        self.half_knob = None             # last physical B17 value, None = not moved since start
+        self.debounce = False
+        self.pending_offs = {}            # (channel, note) -> (gen, packet) waiting DEBOUNCE_S
+        self.deferred_offs = []           # (channel, note, gen) to schedule
+        self.off_gen = 0
+        self.bounces = 0                  # bounces removed since start
+        self.last_event = None            # "deferred" / "bounce" for the last transform
+        self.options_dirty = False
+
+    def options(self) -> dict:
+        return {"half_pedal": self.half_pedal, "half_depth": self.half_depth, "debounce": self.debounce}
+
+    def load(self, data: dict):
+        if isinstance(data.get("half_pedal"), bool):
+            self.half_pedal = data["half_pedal"]
+        depth = data.get("half_depth")
+        if isinstance(depth, (int, float)) and not isinstance(depth, bool):
+            self.half_depth = max(1, min(127, int(depth)))
+        if isinstance(data.get("debounce"), bool):
+            self.debounce = data["debounce"]
+
+    def _pedal_level(self, value: int, mode: str | None = None) -> int:
+        if value and self.half_pedal and (mode or self.mode) == "sustain":
+            return self.half_depth
+        return value
+
+    def set_half(self, on: bool | None = None, depth: int | None = None) -> list[bytes]:
+        """Switch or move the half pedal; a pedal held right now changes at once."""
+        if on is not None:
+            self.half_pedal = bool(on)
+        if depth is not None:
+            self.half_depth = max(1, min(127, int(depth)))
+        self.options_dirty = True
+        packets = []
+        if self.mode != "sustain":
+            return packets
+        for channel, value in enumerate(self.pedal_values):
+            out = self._pedal_level(value)
+            if value and out != self.pedal_out[channel]:
+                self.pedal_out[channel] = out
+                packets.append(bytes((0xB0 | channel, MODE_CC[self.mode], out)))
+        return packets
+
+    def set_debounce(self, on: bool) -> list[bytes]:
+        """Turning it off sends the note-offs that were waiting."""
+        self.debounce = bool(on)
+        self.options_dirty = True
+        packets = []
+        if not on:
+            for (channel, note), (_gen, packet) in sorted(self.pending_offs.items()):
+                self.active_notes[channel].discard(note)
+                packets.append(packet)
+            self.pending_offs.clear()
+        return packets
+
+    def flush_off(self, channel: int, note: int, gen: int) -> bytes | None:
+        """A waiting note-off whose time is up (None if a bounce or release_all took it)."""
+        item = self.pending_offs.get((channel, note))
+        if item is None or item[0] != gen:
+            return None
+        del self.pending_offs[(channel, note)]
+        self.active_notes[channel].discard(note)
+        return item[1]
+
+    def take_offs(self):
+        offs, self.deferred_offs = self.deferred_offs, []
+        return offs
 
     def ones_velocity(self, channel: int, now: float, floor: int) -> int:
         """Raw 1 = too slow to measure. floor = what the map gives a lone 1 (ppp)."""
@@ -250,8 +338,10 @@ class PedalMapper:
             packets += self._cancel_ramp(channel)
         for channel, value in enumerate(self.pedal_values):
             if value:
+                out = self._pedal_level(value, new_mode)
+                self.pedal_out[channel] = out
                 packets.append(bytes((0xB0 | channel, old_cc, 0)))
-                packets.append(bytes((0xB0 | channel, new_cc, value)))
+                packets.append(bytes((0xB0 | channel, new_cc, out)))
         self.mode = new_mode
         return packets
 
@@ -263,6 +353,7 @@ class PedalMapper:
         data = bytes(message)
         status = data[0]
         channel = status & 0x0F
+        self.last_event = None
         if status & 0xF0 == 0xD0 and len(data) >= 2:
             return [bytes((0xB0 | channel, CHANNEL_PRESSURE_KNOB_CC, data[1]))]
         if len(data) >= 3 and status & 0xF0 in (0x80, 0x90) and data[1] == LISTEN_KEY:
@@ -272,7 +363,21 @@ class PedalMapper:
             return []
         if len(data) >= 3 and status & 0xF0 in (0x80, 0x90):
             notes = self.active_notes[channel]
-            if status & 0xF0 == 0x90 and data[2] > 0:
+            is_on = status & 0xF0 == 0x90 and data[2] > 0
+            key = (channel, data[1])
+            if is_on and key in self.pending_offs:
+                # the key let go and struck again within DEBOUNCE_S: a bounce, the note just goes on
+                del self.pending_offs[key]
+                self.bounces += 1
+                self.last_event = "bounce"
+                return []
+            if not is_on and self.debounce and data[1] in notes:
+                self.off_gen += 1
+                self.pending_offs[key] = (self.off_gen, data[:3])
+                self.deferred_offs.append((channel, data[1], self.off_gen))
+                self.last_event = "deferred"
+                return []
+            if is_on:
                 notes.add(data[1])
                 if self.velocity_map is not None:
                     table = self.velocity_map[1 if data[1] % 12 in BLACK_KEYS else 0]
@@ -301,6 +406,9 @@ class PedalMapper:
                 return self._select(selected)
         if len(data) >= 3 and status & 0xF0 == 0xB0:
             cc, value = data[1], data[2]
+            if cc == HALF_PEDAL_KNOB_CC:
+                self.half_knob = value
+                return self.set_half(depth=max(1, value))
             if cc in KNOB_CC:
                 return [bytes((status, KNOB_CC[cc], value))]
             if cc in PAN_KNOB_CC:
@@ -315,10 +423,12 @@ class PedalMapper:
             if cc == 6:
                 return [bytes((status, RPN_KNOB_CC, value))]
             if cc == 64:
-                previous = self.pedal_values[channel]
+                previous = self.pedal_out[channel]
                 self.pedal_values[channel] = value
+                out = self._pedal_level(value)
+                self.pedal_out[channel] = out
                 out_cc = MODE_CC[self.mode]
-                if (value == 0 and previous > 0 and self.mode == "sustain"
+                if (out == 0 and previous > 0 and self.mode == "sustain"
                         and self.release_ms > 0):
                     self._cancel_ramp(channel)
                     self.ramp_cc[channel] = out_cc
@@ -326,7 +436,7 @@ class PedalMapper:
                                                self.ramp_gen[channel]))
                     return []
                 self._cancel_ramp(channel)
-                return [bytes((status, out_cc, value))]
+                return [bytes((status, out_cc, out))]
         return [data]
 
     def route(self, message: list[int] | bytes, now: float | None = None) -> list[tuple[str, bytes]]:
@@ -336,6 +446,7 @@ class PedalMapper:
         packets = []
         for channel, value in enumerate(self.pedal_values):
             ramp = self._cancel_ramp(channel)
+            self.pedal_out[channel] = 0
             if value:
                 packets.append(bytes((0xB0 | channel, MODE_CC[self.mode], 0)))
                 self.pedal_values[channel] = 0
@@ -347,6 +458,7 @@ class PedalMapper:
             for note in sorted(self.active_notes[channel]):
                 packets.append(bytes((0x80 | channel, note, 0)))
             self.active_notes[channel].clear()
+        self.pending_offs.clear()
         self.mode = "sustain"
         return packets
 
@@ -413,7 +525,13 @@ def run():
     except OSError as exc:
         monitor = None
         logging.warning("Monitor port unavailable: %s", exc)
+    try:          # 13.11: 1 ms timers, so the debounce wait and the pedal ramps keep their length
+        ctypes.WinDLL("winmm").timeBeginPeriod(1)
+    except Exception:
+        logging.exception("timeBeginPeriod failed")
     mapper = PedalMapper()
+    mapper.load(load_options())
+    logging.info("Options: %s", mapper.options())
     done = threading.Event()
     midi_in = None
     counts = {PLAY: 0, CONTROL: 0}
@@ -462,6 +580,21 @@ def run():
             if mapper.ramp_step_done(channel, gen, last):
                 send(PLAY, packet)
 
+    def off_step(channel, note, gen):
+        with io_lock:
+            packet = mapper.flush_off(channel, note, gen)
+            if packet is not None:
+                send(PLAY, packet)
+        bus = bus_ref[0]
+        if packet is not None and bus is not None and bus.subs:
+            bus.note(False, note, 0, 0, channel)
+
+    def schedule_offs():
+        for channel, note, gen in mapper.take_offs():
+            t = threading.Timer(DEBOUNCE_S, off_step, (channel, note, gen))
+            t.daemon = True
+            t.start()
+
     def schedule_ramps():
         step_s = mapper.release_ms / 1000 / RELEASE_STEPS
         for channel, cc, values, gen in mapper.take_ramps():
@@ -489,7 +622,12 @@ def run():
             "v": 1,
             "connected": midi_in is not None,
             "mode": mapper.mode,
-            "pedal": max(mapper.pedal_values),
+            "pedal": max(mapper.pedal_out),
+            "half_pedal": mapper.half_pedal,
+            "half_depth": mapper.half_depth,
+            "half_knob": mapper.half_knob,
+            "debounce": mapper.debounce,
+            "bounces": mapper.bounces,
             "una_corda": bool(mapper.una_corda_values[0]),
             "touch": mapper.touch_mode,
             "ones": "context" if mapper.ones_context else "ppp",
@@ -535,6 +673,18 @@ def run():
             presses.append(next(k for k, v in TOUCH_BUTTONS.items() if v == touch))
         for program in presses:
             dispatch(bytes((0xC0, program)))
+        half, depth, deb = want.get("half_pedal"), want.get("half_depth"), want.get("debounce")
+        if not isinstance(depth, (int, float)) or isinstance(depth, bool):
+            depth = None
+        with io_lock:
+            packets = []
+            if isinstance(half, bool) or depth is not None:
+                packets += mapper.set_half(half if isinstance(half, bool) else None, depth)
+            if isinstance(deb, bool):
+                packets += mapper.set_debounce(deb)
+            for packet in packets:
+                send(PLAY, packet)
+        save_options()
         ones = want.get("ones")
         if ones in ("context", "ppp"):
             try:
@@ -546,6 +696,17 @@ def run():
         with io_lock:
             publish_state(midi_in is not None)
         live_event.set()
+
+    def save_options():
+        if not mapper.options_dirty:
+            return
+        mapper.options_dirty = False
+        try:
+            tmp = OPTIONS_FILE.with_name(OPTIONS_FILE.name + ".tmp")
+            tmp.write_text(json.dumps(mapper.options()), encoding="utf-8")
+            os.replace(tmp, OPTIONS_FILE)
+        except OSError:
+            mapper.options_dirty = True
 
     def command_watcher():
         while not done.is_set():
@@ -617,6 +778,7 @@ def run():
             for dest, packet in routed:
                 send(dest, packet)
             schedule_ramps()
+            schedule_offs()
         return routed
 
     def send_routed(message):
@@ -670,8 +832,9 @@ def run():
                 logging.warning("LATE MIDI from driver: %.0f ms apart on the keyboard, arrived %.1f ms apart", _delta * 1000, (now - late["wall"]) * 1000)
             late["wall"] = now
             capture(message, routed, _delta)
-            publish_bus(message, routed)
-            if len(message) >= 3 and message[0] & 0xF0 == 0x90 and message[2] > 0:
+            if mapper.last_event is None:          # a waiting note-off is published when it is sent
+                publish_bus(message, routed)
+            if mapper.last_event is None and len(message) >= 3 and message[0] & 0xF0 == 0x90 and message[2] > 0:
                 out = next((p[2] for d, p in routed if p[0] & 0xF0 == 0x90 and len(p) >= 3), message[2])
                 live_last.update(note=message[1], raw=message[2], out=out)
             live_event.set()
@@ -726,6 +889,7 @@ def run():
                     except OSError:
                         pass
                     logging.info("Touch mode (button): %s", mapper.touch_mode)
+                save_options()          # B17 turned: the depth survives a restart
                 try:
                     wanted = TOUCH_FILE.read_text(encoding="ascii").strip() or DEFAULT_TOUCH
                 except OSError:
@@ -800,6 +964,7 @@ def run():
                     "input": input_label if midi_in is not None else None, "output": PLAY_NAME, "control_output": CONTROL_NAME,
                     "mode": mapper.mode, "una_corda": bool(mapper.una_corda_values[0]),
                     "release_ms": mapper.release_ms,
+                    **mapper.options(), "bounces": mapper.bounces,
                     "velocity_map": mapper.velocity_map is not None,
                     "touch_mode": mapper.touch_mode,
                     "monitor_port": monitor is not None,
