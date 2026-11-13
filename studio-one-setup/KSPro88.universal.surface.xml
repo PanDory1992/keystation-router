@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ControlSurface>
+	<!-- ******************************************************************************************** -->
+	<!-- CONTROL DEFINITIONS -->
+	<!-- ******************************************************************************************** -->
+
+	<Controls>
+		<!-- Private setup command. CC102 is sent only by the local setup tool. -->
+		<Control name="codexAutoFill" type="trigger" options="receive"><MidiMessage status="Controller" address="#66"/></Control>
+        <!-- ******************************************************************************************** -->
+        <!-- 24 x KNOB -->
+        <!-- ******************************************************************************************** -->
+
+		<Control name="knob[0]" title="B10" options="receive" type="knob"> <MidiMessage status="Controller" address="#0A"/> </Control>
+		<Control name="knob[1]" title="B11" options="receive" type="knob"> <MidiMessage status="Controller" address="#02"/> </Control>
+		<Control name="knob[2]" title="B12" options="receive" type="knob"> <MidiMessage status="Controller" address="#0C"/> </Control>
+		<Control name="knob[3]" title="B13" options="receive" type="knob"> <MidiMessage status="Controller" address="#0D"/> </Control>
+		<Control name="knob[4]" title="B14" options="receive" type="knob"> <MidiMessage status="Controller" address="#4B"/> </Control>
+		<Control name="knob[5]" title="B15" options="receive" type="knob"> <MidiMessage status="Controller" address="#4C"/> </Control>
+		<Control name="knob[6]" title="B16" options="receive" type="knob"> <MidiMessage status="Controller" address="#5C"/> </Control>
+		<Control name="knob[7]" title="B17" options="receive" type="knob"> <MidiMessage status="Controller" address="#5F"/> </Control>
+		<Control name="knob[8]" title="B18" options="receive public" type="knob"> <MidiMessage status="Controller" address="#68"/> </Control>
+		<Control name="knob[9]" title="B19" options="receive public" type="knob"> <MidiMessage status="Controller" address="#69"/> </Control>
+		<Control name="knob[10]" title="B20" options="receive public" type="knob"> <MidiMessage status="Controller" address="#6A"/> </Control>
+		<Control name="knob[11]" title="B21" options="receive public" type="knob"> <MidiMessage status="Controller" address="#6B"/> </Control>
+		<Control name="knob[12]" title="B22" options="receive public" type="knob"> <MidiMessage status="Controller" address="#6C"/> </Control>
+		<Control name="knob[13]" title="B23" options="receive public" type="knob"> <MidiMessage status="Controller" address="#6D"/> </Control>
+		<Control name="knob[14]" title="B24" options="receive public" type="knob"> <MidiMessage status="Controller" address="#6E"/> </Control>
+		<Control name="knob[15]" title="B25" options="receive public" type="knob"> <MidiMessage status="Controller" address="#6F"/> </Control>
+		<Control name="knob[16]" title="B26" options="receive public" type="knob"> <MidiMessage status="Controller" address="#70"/> </Control>
+		<Control name="knob[17]" title="B27" options="receive public" type="knob"> <MidiMessage status="Controller" address="#71"/> </Control>
+		<Control name="knob[18]" title="B28" options="receive public" type="knob"> <MidiMessage status="Controller" address="#72"/> </Control>
+		<Control name="knob[19]" title="B29" options="receive public" type="knob"> <MidiMessage status="Controller" address="#73"/> </Control>
+		<Control name="knob[20]" title="B30" options="receive public" type="knob"> <MidiMessage status="Controller" address="#74"/> </Control>
+		<Control name="knob[21]" title="B31" options="receive public" type="knob"> <MidiMessage status="Controller" address="#75"/> </Control>
+		<Control name="knob[22]" title="B32" options="receive public" type="knob"> <MidiMessage status="Controller" address="#76"/> </Control>
+		<Control name="knob[23]" title="B33" options="receive public" type="knob"> <MidiMessage status="Controller" address="#77"/> </Control>
+
+        <!-- ******************************************************************************************** -->
+        <!-- 9 x FADER -->
+        <!-- ******************************************************************************************** -->
+
+		<Control name="fader[0]" title="Fader C1" options="receive"> <MidiMessage status="Controller" address="#49"/> </Control>
+		<Control name="fader[1]" title="Fader C2" options="receive"> <MidiMessage status="Controller" address="#48"/> </Control>
+		<Control name="fader[2]" title="Fader C3" options="receive"> <MidiMessage status="Controller" address="#5B"/> </Control>
+		<Control name="fader[3]" title="Fader C4" options="receive"> <MidiMessage status="Controller" address="#5D"/> </Control>
+		<Control name="fader[4]" title="Fader C5" options="receive"> <MidiMessage status="Controller" address="#4A"/> </Control>
+		<Control name="fader[5]" title="Fader C6" options="receive"> <MidiMessage status="Controller" address="#47"/> </Control>
+		<Control name="fader[6]" title="Fader C7" options="receive"> <MidiMessage status="Controller" address="#05"/> </Control>
+		<Control name="fader[7]" title="Fader C8" options="receive"> <MidiMessage status="Controller" address="#54"/> </Control>
+		<Control name="fader[8]" title="Fader C9" options="receive"> <MidiMessage status="Controller" address="#53"/> </Control>
+
+        <!-- ******************************************************************************************** -->
+        <!-- 17 x BUTTON -->
+        <!-- ******************************************************************************************** -->
+
+		<Control name="button[9]" title="B44" options="receive public" type="button"> <MidiMessage status="Controller" address="#1B"/> </Control>
+		<Control name="button[10]" title="B45" options="receive public" type="button"> <MidiMessage status="Controller" address="#1C"/> </Control>
+		<Control name="button[11]" title="B46" options="receive public" type="button"> <MidiMessage status="Controller" address="#1D"/> </Control>
+		<Control name="button[12]" title="B47" options="receive public" type="button"> <MidiMessage status="Controller" address="#1E"/> </Control>
+		<Control name="button[13]" title="B48" options="receive public" type="button"> <MidiMessage status="Controller" address="#1F"/> </Control>
+		<Control name="button[14]" title="B49" options="receive public" type="button"> <MidiMessage status="Controller" address="#20"/> </Control>
+		<Control name="button[15]" title="B50" options="receive public" type="button"> <MidiMessage status="Controller" address="#21"/> </Control>
+		<Control name="button[16]" title="B51" options="receive public" type="button"> <MidiMessage status="Controller" address="#22"/> </Control>
+		<Control name="button[0]" title="C52" options="receive"> <MidiMessage status="Controller" address="#23"/> </Control>
+		<Control name="button[1]" title="C53" options="receive"> <MidiMessage status="Controller" address="#24"/> </Control>
+		<Control name="button[2]" title="C54" options="receive"> <MidiMessage status="Controller" address="#25"/> </Control>
+		<Control name="button[3]" title="C55" options="receive"> <MidiMessage status="Controller" address="#26"/> </Control>
+		<Control name="button[4]" title="C56" options="receive"> <MidiMessage status="Controller" address="#27"/> </Control>
+		<Control name="button[5]" title="C57" options="receive"> <MidiMessage status="Controller" address="#28"/> </Control>
+		<Control name="button[6]" title="C58" options="receive"> <MidiMessage status="Controller" address="#29"/> </Control>
+		<Control name="button[7]" title="C59" options="receive"> <MidiMessage status="Controller" address="#2A"/> </Control>
+		<Control name="button[8]" title="C60" options="receive"> <MidiMessage status="Controller" address="#2B"/> </Control>
+		<!-- P10 Program/Bank: B44-B51 are inferred 00-07; C52=08 and C53=09 were read on the hardware. -->
+		<Control name="pcFunction[0]" title="B44 arm" type="trigger" options="receive"> <MidiMessage status="#C0" address="#00"/> </Control>
+		<Control name="pcFunction[1]" title="B45 monitor" type="trigger" options="receive"> <MidiMessage status="#C0" address="#01"/> </Control>
+		<Control name="pcFunction[2]" title="B46 mute" type="trigger" options="receive"> <MidiMessage status="#C0" address="#02"/> </Control>
+		<Control name="pcFunction[3]" title="B47 solo" type="trigger" options="receive"> <MidiMessage status="#C0" address="#03"/> </Control>
+		<Control name="pcFunction[4]" title="B48 loop" type="trigger" options="receive"> <MidiMessage status="#C0" address="#04"/> </Control>
+		<Control name="pcFunction[5]" title="B49 click" type="trigger" options="receive"> <MidiMessage status="#C0" address="#05"/> </Control>
+		<Control name="pcFunction[6]" title="B50 undo" type="trigger" options="receive"> <MidiMessage status="#C0" address="#06"/> </Control>
+		<Control name="pcFunction[7]" title="B51 save" type="trigger" options="receive"> <MidiMessage status="#C0" address="#07"/> </Control>
+		<Control name="pcReset[0]" title="C52 reset 0 dB" type="trigger" options="receive"> <MidiMessage status="#C0" address="#08"/> </Control>
+		<Control name="pcReset[1]" title="C53 reset 0 dB" type="trigger" options="receive"> <MidiMessage status="#C0" address="#09"/> </Control>
+		<Control name="pcReset[2]" title="C54 reset 0 dB" type="trigger" options="receive"> <MidiMessage status="#C0" address="#0A"/> </Control>
+		<Control name="pcReset[3]" title="C55 reset 0 dB" type="trigger" options="receive"> <MidiMessage status="#C0" address="#0B"/> </Control>
+		<Control name="pcReset[4]" title="C56 reset 0 dB" type="trigger" options="receive"> <MidiMessage status="#C0" address="#0C"/> </Control>
+		<Control name="pcReset[5]" title="C57 reset 0 dB" type="trigger" options="receive"> <MidiMessage status="#C0" address="#0D"/> </Control>
+		<Control name="pcReset[6]" title="C58 reset 0 dB" type="trigger" options="receive"> <MidiMessage status="#C0" address="#0E"/> </Control>
+		<Control name="pcReset[7]" title="C59 reset 0 dB" type="trigger" options="receive"> <MidiMessage status="#C0" address="#0F"/> </Control>
+		<Control name="pcClick" title="C60 click" type="trigger" options="receive"> <MidiMessage status="#C0" address="#10"/> </Control>
+
+        <!-- ******************************************************************************************** -->
+        <!-- TRANSPORT CONTROLS -->
+        <!-- ******************************************************************************************** -->
+
+		<Control name="record" options="receive"> <MidiMessage status="Controller" address="#1A"/> </Control>
+
+		<Control name="rewind" options="receive"> <MidiMessage status="Controller" address="#16"/> </Control>
+
+		<Control name="ff" options="receive"> <MidiMessage status="Controller" address="#17"/> </Control>
+
+		<Control name="stop" options="receive"> <MidiMessage status="Controller" address="#18"/> </Control>
+
+		<Control name="play" options="receive"> <MidiMessage status="Controller" address="#19"/> </Control>
+
+	</Controls>
+
+	<!-- ******************************************************************************************** -->
+	<!-- SURFACE MAPPINGS -->
+	<!-- ******************************************************************************************** -->
+
+	<Mappings>
+		<Global>
+			<using device="Editor/Paging"><Radio control="codexAutoFill" param="pagingMode" value="2"/></using>
+			<Command control="pcFunction[6]" command.category="Edit" command.name="Undo"/>
+			<Command control="pcFunction[7]" command.category="File" command.name="Save"/>
+			<Command control="button[15]" command.category="Edit" command.name="Undo"/>
+			<Command control="button[16]" command.category="File" command.name="Save"/>
+		</Global>
+		<GenericMapping>
+			<Bank>
+				<Strip name="pluginKnob[0]"><Value control="knob[8]" param="value"/></Strip>
+				<Strip name="pluginKnob[1]"><Value control="knob[9]" param="value"/></Strip>
+				<Strip name="pluginKnob[2]"><Value control="knob[10]" param="value"/></Strip>
+				<Strip name="pluginKnob[3]"><Value control="knob[11]" param="value"/></Strip>
+				<Strip name="pluginKnob[4]"><Value control="knob[12]" param="value"/></Strip>
+				<Strip name="pluginKnob[5]"><Value control="knob[13]" param="value"/></Strip>
+				<Strip name="pluginKnob[6]"><Value control="knob[14]" param="value"/></Strip>
+				<Strip name="pluginKnob[7]"><Value control="knob[15]" param="value"/></Strip>
+				<Strip name="pluginKnob[8]"><Value control="knob[16]" param="value"/></Strip>
+				<Strip name="pluginKnob[9]"><Value control="knob[17]" param="value"/></Strip>
+				<Strip name="pluginKnob[10]"><Value control="knob[18]" param="value"/></Strip>
+				<Strip name="pluginKnob[11]"><Value control="knob[19]" param="value"/></Strip>
+				<Strip name="pluginKnob[12]"><Value control="knob[20]" param="value"/></Strip>
+				<Strip name="pluginKnob[13]"><Value control="knob[21]" param="value"/></Strip>
+				<Strip name="pluginKnob[14]"><Value control="knob[22]" param="value"/></Strip>
+				<Strip name="pluginKnob[15]"><Value control="knob[23]" param="value"/></Strip>
+			</Bank>
+		</GenericMapping>
+		
+        <!-- ******************************************************************************************** -->
+        <!-- MIXER MAPPING -->
+        <!-- ******************************************************************************************** -->
+
+		<DeviceMapping device="MixerConsole">
+			<!-- C1-C8/B10-B17/C52-C59 address consecutive mixer channels. -->
+			<ScrollBank target="AllBank" pagesize="8">
+				<Strip>
+					<Value control="fader[0]" param="volume"/>
+					<Value control="knob[0]" param="pan"/>
+					<DefaultValue control="button[0]" param="volume"/>
+					<DefaultValue control="pcReset[0]" param="volume"/>
+				</Strip>
+				<Strip>
+					<Value control="fader[1]" param="volume"/>
+					<Value control="knob[1]" param="pan"/>
+					<DefaultValue control="button[1]" param="volume"/>
+					<DefaultValue control="pcReset[1]" param="volume"/>
+				</Strip>
+				<Strip>
+					<Value control="fader[2]" param="volume"/>
+					<Value control="knob[2]" param="pan"/>
+					<DefaultValue control="button[2]" param="volume"/>
+					<DefaultValue control="pcReset[2]" param="volume"/>
+				</Strip>
+				<Strip>
+					<Value control="fader[3]" param="volume"/>
+					<Value control="knob[3]" param="pan"/>
+					<DefaultValue control="button[3]" param="volume"/>
+					<DefaultValue control="pcReset[3]" param="volume"/>
+				</Strip>
+				<Strip>
+					<Value control="fader[4]" param="volume"/>
+					<Value control="knob[4]" param="pan"/>
+					<DefaultValue control="button[4]" param="volume"/>
+					<DefaultValue control="pcReset[4]" param="volume"/>
+				</Strip>
+				<Strip>
+					<Value control="fader[5]" param="volume"/>
+					<Value control="knob[5]" param="pan"/>
+					<DefaultValue control="button[5]" param="volume"/>
+					<DefaultValue control="pcReset[5]" param="volume"/>
+				</Strip>
+				<Strip>
+					<Value control="fader[6]" param="volume"/>
+					<Value control="knob[6]" param="pan"/>
+					<DefaultValue control="button[6]" param="volume"/>
+					<DefaultValue control="pcReset[6]" param="volume"/>
+				</Strip>
+				<Strip>
+					<Value control="fader[7]" param="volume"/>
+					<Value control="knob[7]" param="pan"/>
+					<DefaultValue control="button[7]" param="volume"/>
+					<DefaultValue control="pcReset[7]" param="volume"/>
+				</Strip>
+			</ScrollBank>
+			<!-- B44-B47 act on the channel currently selected in Studio One. -->
+			<ScrollBank target="FollowBank" pagesize="1">
+				<Strip>
+					<Toggle control="pcFunction[0]" param="recordArmed"/>
+					<Toggle control="pcFunction[1]" param="monitor"/>
+					<Toggle control="pcFunction[2]" param="mute"/>
+					<Toggle control="pcFunction[3]" param="solo"/>
+					<Toggle control="button[9]" param="recordArmed"/>
+					<Toggle control="button[10]" param="monitor"/>
+					<Toggle control="button[11]" param="mute"/>
+					<Toggle control="button[12]" param="solo"/>
+				</Strip>
+			</ScrollBank>
+			<Bank target="MasterBank">
+				<Strip><Value control="fader[8]" param="volume"/></Strip>
+			</Bank>
+		</DeviceMapping>
+		
+        <!-- ******************************************************************************************** -->
+        <!-- TRANSPORT MAPPING -->
+        <!-- ******************************************************************************************** -->
+
+		<DeviceMapping device="TransportPanel">
+
+			<Toggle control="play"   param="start"/>
+			<Toggle control="stop"   param="stop"/>
+			<Toggle control="record" param="record"/>
+			<Touch  control="ff"     param="fastForward"/>
+			<Touch  control="rewind"    param="rewind"/>
+			<Toggle control="pcFunction[4]" param="loop"/>
+			<Toggle control="button[13]" param="loop"/>
+
+		</DeviceMapping>
+		
+		<!-- ******************************************************************************************** -->
+        <!-- METRONOME MAPPING -->
+        <!-- ******************************************************************************************** -->
+
+		<DeviceMapping device="Metronome">
+			<Value control="button[8]" param="clickOn"/>
+			<Toggle control="pcClick" param="clickOn"/>
+			<Toggle control="pcFunction[5]" param="clickOn"/>
+			<Toggle control="button[14]" param="clickOn"/>
+		</DeviceMapping>
+
+	</Mappings>
+
+</ControlSurface>
