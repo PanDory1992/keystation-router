@@ -1,0 +1,20 @@
+[package]
+name = "dzwiek_z_pc"
+version = "0.1.0"
+edition = "2021"
+description = "Plays a Windows audio device (e.g. VB-Cable fed by Firefox) inside the DAW, so ASIO4ALL can stay on the UM2 only"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git", default-features = false, features = ["vst3"] }
+nih_plug_egui = { git = "https://github.com/robbert-vdh/nih-plug.git" }
+rtrb = "0.3"
+
+[target.'cfg(windows)'.dependencies]
+wasapi = "0.27"
+
+[profile.release]
+lto = "thin"
+strip = "symbols"

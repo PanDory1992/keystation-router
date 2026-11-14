@@ -1,0 +1,26 @@
+Dźwięk z PC 0.1.0 (14.11.2026): Firefox i inne programy Windows w Studio One, bez ruszania bufora pianina.
+
+JAK TO DZIAŁA
+ASIO4ALL ma tylko UM2 (bufor 128). Firefox gra do VB-Cable. Wtyczka w Studio One czyta VB-Cable
+w trybie współdzielonym Windows, osobnym wątkiem, z własnym zapasem (domyślnie 60 ms), i dokłada ten
+dźwięk do miksu. Czeka tylko dźwięk z Firefoxa, pianino nie.
+
+USTAWIENIE (raz)
+1. ASIO4ALL (ikona w Studio One: Opcje > Urządzenie audio > Panel sterowania):
+   zostaw włączone TYLKO UM2. VB-Cable ma być wyłączone, inaczej ASIO4ALL je zabierze.
+2. Windows: Ustawienia > System > Dźwięk > Mikser głośności > Firefox > Urządzenie wyjściowe:
+   "CABLE Input (VB-Audio Virtual Cable)". (Albo ustaw CABLE Input jako domyślne wyjście,
+   wtedy wszystkie dźwięki Windows pójdą do Studio One.)
+3. Zamknij Studio One. Kliknij dwa razy "Zainstaluj Dzwiek z PC.bat" (zapyta o administratora).
+4. Studio One: dodaj kanał FX (prawy klik w mikserze > Dodaj kanał FX) albo pustą ścieżkę audio
+   bez wejścia. Wstaw na niej "Dzwiek z PC". Źródło: "samo: pierwsze CABLE Output" albo wybierz z listy.
+   Głośność ustawiasz suwakiem kanału albo w oknie wtyczki.
+
+CZY JEST CZYSTO
+Okno pokazuje: zapas teraz, korekta zegara, przerwy, odrzucone.
+- "przerwy 0" i zielony napis = dobrze.
+- Przerwy rosną = zwiększ Zapas (np. 100 ms). Bufora ASIO NIE zmieniaj.
+- "korekta zegara" to wyrównanie dwóch zegarów (UM2 i VB-Cable), zwykle kilka setnych procenta.
+- Zamiast VB-Cable można wybrać "Z wyjścia: ..." (np. Realtek): wtyczka nagrywa to, co tam gra.
+
+ŹRÓDŁA: zrodla/ (Rust, nih-plug, wasapi). Testy DSP: cd zrodla/tests/dsp_only && cargo test
