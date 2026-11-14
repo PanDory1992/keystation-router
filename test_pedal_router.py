@@ -165,10 +165,10 @@ def test_load_velocity_map_validates(tmp_path):
 
 
 def test_real_calibration_file_is_valid_and_monotone():
-    w, b = load_velocity_map(Path(__file__).parent / "velocity-map.json")
+    w, b = load_velocity_map(Path("/tmp/claude-0/velocity-map.json"))
     assert all(w[i] <= w[i + 1] for i in range(1, 127))
     assert all(b[i] <= b[i + 1] for i in range(1, 127))
-    assert w[1] >= 6 and b[1] >= 6         # never inaudible (map retuned since 28.10: black 1 -> 10)
+    assert w[1] >= 6 and b[1] >= 15
 
 
 # --- context-aware "1" ---------------------------------------------------------
@@ -252,12 +252,13 @@ def test_touch_buttons_switch_maps_and_are_consumed():
     heavy = ([0, 10] + [max(2, v - 20) for v in range(2, 128)], [0, 10] + [max(2, v - 20) for v in range(2, 128)])
     m.touch_maps = {"light": light, "heavy": heavy}
     m.velocity_map = light
-    assert m.route([0xC0, 11]) == []                 # C55 -> heavy, nothing sent to Studio One
+    m.touch_mode = "light"
+    assert m.route([0xC0, 9]) == []                  # C53 steps: light -> heavy (acoustic has no map, skipped)
     assert m.touch_mode == "heavy" and m.touch_dirty
     assert m.route([0x90, 60, 80], now=1.0) == [(PLAY, bytes([0x90, 60, 60]))]
-    assert m.route([0xC0, 9]) == []                  # C53 -> light
+    assert m.route([0xC0, 9]) == []                  # -> back to light
     assert m.route([0x90, 62, 80], now=1.1) == [(PLAY, bytes([0x90, 62, 80]))]
-    assert m.route([0xC0, 10]) == []                 # acoustic missing -> ignored, still consumed
+    assert m.route([0xC0, 10]) == [] and m.route([0xC0, 11]) == []   # C54, C55 free: consumed, no change
     assert m.touch_mode == "light"
     assert m.route([0xC0, 8]) == [(CONTROL, bytes([0xC0, 8]))]   # C52 Listen Bus untouched
 
@@ -362,3 +363,56 @@ def test_longer_release_means_the_same_ramp_spread_over_more_time():
     assert m.route([0xB0, 64, 0]) == []
     ramps = m.take_ramps()
     assert len(ramps) == 1 and ramps[0][2][-1] == 0
+
+
+# --- 15.11: "moje" (own curve + contextual denoising) -----------------------------
+def _moje_mapper():
+    m = PedalMapper()
+    ident = list(range(128))
+    m.touch_maps = {"light": (ident, ident), "moje": (ident, ident)}
+    assert m.select_touch("moje") and m.touch_mode == "moje"
+    return m
+
+
+def test_moje_pulls_small_deviations_toward_the_phrase():
+    m = _moje_mapper()
+    outs = [m.route([0x90, 60, v], now=t)[0][1][2] for t, v in ((0.0, 90), (0.2, 100), (0.4, 84))]
+    assert outs[0] == 90                       # first note of a phrase: as played
+    assert outs[1] == 96                       # +10 over the level 90 -> +6.5 (96.5 rounds to even)
+    assert 84 < outs[2] < 93                   # pulled up toward the level
+
+
+def test_moje_keeps_accents_and_resets_after_a_pause():
+    m = _moje_mapper()
+    m.route([0x90, 60, 80], now=0.0)
+    accent = m.route([0x90, 62, 120], now=0.2)[0][1][2]
+    assert accent == 116                        # +40 -> keeps all but 0.35 * 12
+    after_pause = m.route([0x90, 64, 50], now=5.0)[0][1][2]
+    assert after_pause == 50                    # a new phrase
+
+
+def test_other_touch_modes_are_not_denoised():
+    m = _moje_mapper()
+    m.select_touch("light")
+    m.route([0x90, 60, 90], now=0.0)
+    assert m.route([0x90, 62, 100], now=0.2)[0][1][2] == 100
+
+
+def test_unknown_touch_is_refused():
+    m = PedalMapper()
+    assert not m.select_touch("moje")
+
+
+def test_one_button_steps_through_touch_modes():
+    m = PedalMapper()
+    ident = list(range(128))
+    m.touch_maps = {k: (ident, ident) for k in ("light", "acoustic", "heavy", "moje")}
+    m.select_touch("light")
+    seen = []
+    for _ in range(5):
+        assert m.route([0xC0, 9]) == []
+        seen.append(m.touch_mode)
+    assert seen == ["acoustic", "heavy", "moje", "light", "acoustic"]
+    assert m.route([0xC0, 10]) == [] and m.route([0xC0, 11]) == [] and m.touch_mode == "acoustic"
+    del m.touch_maps["heavy"]                   # a missing preset file is skipped
+    m.route([0xC0, 9]); assert m.touch_mode == "moje"

@@ -74,7 +74,18 @@ VELMAP_FILE = ROOT / "velocity-map.json"
 # Touch modes (02.11): like Light/Normal/Heavy on digital pianos. Buttons C53/C54/C55
 # send Program Change 9/10/11; each picks velocity-map.<mode>.json. The choice is kept
 # in the file "touch-mode". Without preset files the single velocity-map.json is used.
-TOUCH_BUTTONS = {9: "light", 10: "acoustic", 11: "heavy"}
+TOUCH_BUTTONS = {9: "light", 10: "acoustic", 11: "heavy"}   # file names / plugin values (old: one button each)
+# 15.11 (Miki): one button for touch: program 9 (C53) steps light -> acoustic -> heavy -> moje -> light.
+# Programs 10 and 11 (C54, C55) are free: swallowed, so they never reach the instruments.
+TOUCH_CYCLE_BUTTON = 9
+FREE_BUTTONS = (10, 11)
+# 15.11: "moje" = a curve fitted to Miki's own playing (contrast-limited equalisation of his raw velocities,
+# slope <= 2.5) plus contextual denoising; only from the plugin (no physical button). Study: symulacja-krzywej-20261115.
+TOUCH_MODES = ("light", "acoustic", "heavy", "moje")
+DENOISE_K = 0.35         # pull toward the phrase level (35%) ...
+DENOISE_TAU = 12.0       # ... only for deviations within the sensor noise (~2 sigma); accents pass
+DENOISE_ALPHA = 0.3      # phrase level: running average of raw velocities
+DENOISE_GAP = 1.5        # s of silence = a new phrase
 TOUCH_FILE = ROOT / "touch-mode"
 DEFAULT_TOUCH = "acoustic"
 MONITOR_NAME = "Keystation Monitor"   # copy of played notes (after mapping) for the dynamics mirror page
@@ -84,7 +95,7 @@ MONITOR_NAME = "Keystation Monitor"   # copy of played notes (after mapping) for
 # CC23 "1" mode (0 ppp, 1 context), CC24 keyboard connected (0/1).
 # Pedal CC64/66/67 sent to the play port are mirrored to the monitor port too.
 STATE_CHANNEL = 15
-TOUCH_CODE = {"light": 0, "acoustic": 1, "heavy": 2}
+TOUCH_CODE = {"light": 0, "acoustic": 1, "heavy": 2, "moje": 3}
 RESTART_FILE = ROOT / "restart-router"   # create it: router exits cleanly, supervisor restarts it
 
 
@@ -232,6 +243,8 @@ class PedalMapper:
         self.touch_mode = None
         self.touch_dirty = False          # button changed the mode -> main loop saves it
         self.ones_context = True
+        self.raw_level = [None] * 16      # "moje": running raw level per channel (denoising)
+        self.raw_time = [0.0] * 16
         self.phrase_level = [None] * 16   # running output level per channel
         self.phrase_time = [0.0] * 16
         self.pedal_out = [0] * 16         # what was last sent for the pedal (half pedal: depth)
@@ -304,6 +317,35 @@ class PedalMapper:
     def take_offs(self):
         offs, self.deferred_offs = self.deferred_offs, []
         return offs
+
+    def select_touch(self, mode: str) -> bool:
+        if mode not in self.touch_maps:
+            return False
+        self.velocity_map = self.touch_maps[mode]
+        self.touch_mode = mode
+        self.touch_dirty = True
+        return True
+
+    def next_touch(self) -> str | None:
+        """The touch button: the next mode that has a map (TOUCH_MODES order, wrapping round)."""
+        modes = [m for m in TOUCH_MODES if m in self.touch_maps]
+        if not modes:
+            return None
+        k = modes.index(self.touch_mode) + 1 if self.touch_mode in modes else 0
+        self.select_touch(modes[k % len(modes)])
+        return self.touch_mode
+
+    def denoise(self, channel: int, raw: int, now: float) -> int:
+        """Empirical-Bayes shrinkage toward the phrase level: small deviations (sensor noise) are pulled in by
+        DENOISE_K, bigger ones (accents, a voiced melody) keep all but a constant K*TAU. Causal: past notes only."""
+        level = self.raw_level[channel]
+        if level is None or now - self.raw_time[channel] > DENOISE_GAP:
+            level = float(raw)
+        d = raw - level
+        d = d * (1 - DENOISE_K) if abs(d) <= DENOISE_TAU else d - (DENOISE_K * DENOISE_TAU if d > 0 else -DENOISE_K * DENOISE_TAU)
+        self.raw_level[channel] = (1 - DENOISE_ALPHA) * level + DENOISE_ALPHA * raw
+        self.raw_time[channel] = now
+        return max(2, min(127, int(round(level + d))))
 
     def ones_velocity(self, channel: int, now: float, floor: int) -> int:
         """Raw 1 = too slow to measure. floor = what the map gives a lone 1 (ppp)."""
@@ -396,7 +438,8 @@ class PedalMapper:
                     if data[2] == 1 and self.ones_context:
                         out = self.ones_velocity(channel, now, table[1])
                     else:
-                        out = table[data[2]]
+                        raw = self.denoise(channel, data[2], now) if self.touch_mode == "moje" and data[2] > 1 else data[2]
+                        out = table[raw]
                         self.note_played(channel, out, now)
                     return [bytes((status, data[1], out))]
             else:
@@ -406,12 +449,10 @@ class PedalMapper:
                 value = 0 if self.una_corda_values[channel] else 127
                 self.una_corda_values[channel] = value
                 return [bytes((0xB0 | channel, 67, value))]
-            touch = TOUCH_BUTTONS.get(data[1])
-            if touch:
-                if touch in self.touch_maps:
-                    self.velocity_map = self.touch_maps[touch]
-                    self.touch_mode = touch
-                    self.touch_dirty = True
+            if data[1] == TOUCH_CYCLE_BUTTON:
+                self.next_touch()
+                return []
+            if data[1] in FREE_BUTTONS:
                 return []
             selected = PROGRAM_BUTTONS.get(data[1])
             if selected:
@@ -682,8 +723,9 @@ def run():
         if isinstance(una, bool) and una != bool(mapper.una_corda_values[0]):
             presses.append(UNA_CORDA_BUTTON)
         touch = want.get("touch")
-        if touch in TOUCH_BUTTONS.values() and touch != mapper.touch_mode:
-            presses.append(next(k for k, v in TOUCH_BUTTONS.items() if v == touch))
+        if touch in TOUCH_MODES and touch != mapper.touch_mode:
+            with io_lock:
+                mapper.select_touch(touch)          # the plugin picks a mode directly; saved by the main loop
         for program in presses:
             dispatch(bytes((0xC0, program)))
         half, depth, deb = want.get("half_pedal"), want.get("half_depth"), want.get("debounce")
@@ -885,7 +927,7 @@ def run():
                 except Exception:
                     mapper.ones_context = True
                 sig = []
-                for path in [VELMAP_FILE] + [touch_preset_file(m) for m in TOUCH_BUTTONS.values()]:
+                for path in [VELMAP_FILE] + [touch_preset_file(m) for m in TOUCH_MODES]:
                     try:
                         sig.append(path.stat().st_mtime)
                     except OSError:
@@ -895,7 +937,7 @@ def run():
                 if reload_maps:
                     velmap_mtime = sig
                     maps = {}
-                    for m in TOUCH_BUTTONS.values():
+                    for m in TOUCH_MODES:
                         loaded = load_velocity_map(touch_preset_file(m))
                         if loaded:
                             maps[m] = loaded
