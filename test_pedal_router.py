@@ -165,10 +165,10 @@ def test_load_velocity_map_validates(tmp_path):
 
 
 def test_real_calibration_file_is_valid_and_monotone():
-    w, b = load_velocity_map(Path("/tmp/claude-0/velocity-map.json"))
+    w, b = load_velocity_map(Path(__file__).parent / "velocity-map.json")
     assert all(w[i] <= w[i + 1] for i in range(1, 127))
     assert all(b[i] <= b[i + 1] for i in range(1, 127))
-    assert w[1] >= 6 and b[1] >= 15
+    assert w[1] >= 6 and b[1] >= 6         # never inaudible (map retuned since 28.10: black 1 -> 10)
 
 
 # --- context-aware "1" ---------------------------------------------------------
