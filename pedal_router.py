@@ -145,6 +145,18 @@ def release_ms() -> int:
         return DEFAULT_RELEASE_MS
 
 
+# 14.11: Keystation Status 0.4.0 offers 60 / 120 / 250 ms ("szybko / średnio / miękko"); any 0..1000 is accepted.
+def set_release_ms(ms) -> int | None:
+    """Save the sustain release ramp length (ms) to the "release-ms" file; None if the value is not a number."""
+    if isinstance(ms, bool) or not isinstance(ms, (int, float)):
+        return None
+    value = max(0, min(1000, int(round(ms))))
+    tmp = RELEASE_FILE.with_name(RELEASE_FILE.name + ".tmp")
+    tmp.write_text(str(value), encoding="ascii")
+    os.replace(tmp, RELEASE_FILE)
+    return value
+
+
 def ramp_values(start: int, steps: int = RELEASE_STEPS) -> list[int]:
     """Falling CC values from start to 0, fast at first (dampers settle), last one 0."""
     values = [round(start * (1 - k / steps) ** 1.5) for k in range(1, steps + 1)]
@@ -628,6 +640,7 @@ def run():
             "half_knob": mapper.half_knob,
             "debounce": mapper.debounce,
             "bounces": mapper.bounces,
+            "release_ms": mapper.release_ms,
             "una_corda": bool(mapper.una_corda_values[0]),
             "touch": mapper.touch_mode,
             "ones": "context" if mapper.ones_context else "ppp",
@@ -685,6 +698,13 @@ def run():
             for packet in packets:
                 send(PLAY, packet)
         save_options()
+        if "release_ms" in want:
+            try:
+                value = set_release_ms(want.get("release_ms"))
+            except OSError:
+                value = None
+            if value is not None:
+                mapper.release_ms = value
         ones = want.get("ones")
         if ones in ("context", "ppp"):
             try:

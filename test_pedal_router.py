@@ -165,7 +165,7 @@ def test_load_velocity_map_validates(tmp_path):
 
 
 def test_real_calibration_file_is_valid_and_monotone():
-    w, b = load_velocity_map(Path("/tmp/claude-0/velocity-map.json"))
+    w, b = load_velocity_map(Path(__file__).parent / "velocity-map.json")
     assert all(w[i] <= w[i + 1] for i in range(1, 127))
     assert all(b[i] <= b[i + 1] for i in range(1, 127))
     assert w[1] >= 6 and b[1] >= 15
@@ -338,3 +338,27 @@ def test_options_load_and_validate(tmp_path):
     m = PedalMapper(); m.load(load_options(f))
     assert m.half_pedal and m.half_depth == 127 and not m.debounce
     assert load_options(tmp_path / "missing.json") == {}
+
+
+# --- 14.11: release length from the plugin ------------------------------------
+import pedal_router
+
+
+def test_set_release_ms_saves_and_clamps(tmp_path, monkeypatch):
+    monkeypatch.setattr(pedal_router, "RELEASE_FILE", tmp_path / "release-ms")
+    assert pedal_router.release_ms() == pedal_router.DEFAULT_RELEASE_MS     # no file: 120
+    assert pedal_router.set_release_ms(250) == 250
+    assert pedal_router.release_ms() == 250
+    assert pedal_router.set_release_ms(60.4) == 60
+    assert pedal_router.set_release_ms(5000) == 1000
+    assert pedal_router.set_release_ms(-3) == 0
+    assert pedal_router.set_release_ms("250") is None and pedal_router.release_ms() == 0
+    assert pedal_router.set_release_ms(True) is None
+
+
+def test_longer_release_means_the_same_ramp_spread_over_more_time():
+    m = PedalMapper(); m.release_ms = 250
+    m.route([0xB0, 64, 127])
+    assert m.route([0xB0, 64, 0]) == []
+    ramps = m.take_ramps()
+    assert len(ramps) == 1 and ramps[0][2][-1] == 0
