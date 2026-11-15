@@ -6,6 +6,14 @@ Started once at logon (Startup folder). Launches and watches:
   * trener/trener_serwer.py  -> Trener on port 47810, never exits when idle (10.11: the iMac and the
                                 iPhone can always open it, Trener.bat only opens the window)
 If any one is missing or stops, it is started again within a few seconds.
+
+Restart without anyone at the PC (15.11.2026, so Claude can deploy on its own): create an empty file
+next to this script and within CHECK_S seconds it is acted on and removed:
+  restart-trener     the Trener server is stopped and started again (new code, new VERSION)
+  restart-bridge     the same for the Studio One bridge
+  restart-nadzorca   this supervisor starts a fresh copy of itself and exits (after editing this file);
+                     the services keep running and the new copy watches them
+(The router has its own: restart-router, handled inside pedal_router.py.)
 Every start, stop, exit code and the child's error output go to supervisor.log,
 so a failure is never silent again.
 """
@@ -27,6 +35,7 @@ SERVICES = {
 }
 ARGS = {"trener": ["--no-idle-exit"]}
 CHECK_S = 3
+TRIGGERS = {"restart-trener": "trener", "restart-bridge": "bridge", "restart-nadzorca": "supervisor"}
 NO_WINDOW = 0x08000000
 
 
@@ -51,6 +60,30 @@ def running_elsewhere(script: Path) -> bool:
     return any(script.name.lower() in line.lower() for line in out.splitlines())
 
 
+def take_triggers(root: Path = ROOT) -> set:
+    """Names asked to restart by a trigger file; the files are removed (each asks once)."""
+    asked = set()
+    for fname, name in TRIGGERS.items():
+        f = root / fname
+        if f.exists():
+            try:
+                f.unlink()
+            except OSError:
+                continue
+            asked.add(name)
+    return asked
+
+
+def stop_outside(script: Path) -> None:
+    """End a copy of `script` this supervisor did not start (e.g. Trener.bat)."""
+    subprocess.run(
+        ["powershell", "-NoProfile", "-Command",
+         "Get-CimInstance Win32_Process -Filter \"Name like 'python%'\" | "
+         f"Where-Object {{ $_.CommandLine -like '*{script.name}*' }} | "
+         "ForEach-Object { Invoke-CimMethod -InputObject $_ -MethodName Terminate | Out-Null }"],
+        capture_output=True, timeout=30, creationflags=NO_WINDOW)
+
+
 def main():
     kernel = ctypes.WinDLL("kernel32", use_last_error=True)
     kernel.CreateMutexW.restype = ctypes.c_void_p
@@ -65,6 +98,26 @@ def main():
             log(f"{name}: already running (started outside supervisor) - watching only")
             procs[name] = None
     while True:
+        asked = take_triggers()
+        if "supervisor" in asked:
+            log("restart-nadzorca: starting a fresh supervisor, this one exits")
+            kernel.CloseHandle(ctypes.c_void_p(mutex))
+            subprocess.Popen([str(PYTHONW), str(Path(__file__).resolve())], cwd=str(ROOT), creationflags=NO_WINDOW)
+            return
+        for name in asked & set(SERVICES):
+            p = procs.get(name)
+            log(f"restart-{name}: stopping it, it starts again with the code on disk")
+            if p is not None and p.poll() is None:
+                p.terminate()
+                try:
+                    p.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    p.kill()
+            elif name in procs:
+                stop_outside(SERVICES[name])
+            procs.pop(name, None)
+            next_try[name] = 0.0
+            backoff[name] = CHECK_S
         for name, script in SERVICES.items():
             p = procs.get(name)
             if name in procs and p is None:
