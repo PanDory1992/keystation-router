@@ -40,6 +40,11 @@ const GREY: Color32 = Color32::from_rgb(112, 113, 112);
 const ACCENT: Color32 = Color32::from_rgb(52, 150, 92);
 const EPAPER: Color32 = Color32::from_rgba_premultiplied(206, 209, 200, 236);
 const FLASH_S: f64 = 0.6;
+/// the small keyboard: notes below this are coloured as the left hand
+const SPLIT: u8 = 60;
+const LEFT_HAND: Color32 = Color32::from_rgb(206, 74, 46); // vermilion
+/// indigo: green already means "black key" on the velocity screen
+const RIGHT_HAND: Color32 = Color32::from_rgb(40, 86, 168);
 const TOUCH_ORDER: [&str; 5] = ["light", "acoustic", "heavy", "moje", "moje3"];
 const RELEASE_ORDER: [u16; 3] = [60, 120, 250];
 
@@ -87,6 +92,47 @@ pub struct Layout {
     pub faders: Vec<Control>,
     pub buttons: Vec<Control>,
     groups: Vec<(String, String)>,
+    pub minikeys: MiniKeys,
+}
+
+/// The small drawing of the 88 keys (pixels of the backgrounds).
+#[derive(Default)]
+pub struct MiniKeys {
+    /// 53 boundaries of the 52 white keys, A0..C8
+    pub white: Vec<f32>,
+    /// 36 black keys, [x0, x1]
+    pub black: Vec<[f32; 2]>,
+    pub top: f32,
+    pub black_bottom: f32,
+    pub bottom: f32,
+}
+
+pub fn is_black(note: u8) -> bool {
+    matches!(note % 12, 1 | 3 | 6 | 8 | 10)
+}
+
+impl MiniKeys {
+    /// The key of a MIDI note as one or two rectangles [x0, y0, x1, y1]: a black key is one; a white
+    /// key is its lower part plus the upper part between its black neighbours (so they stay black).
+    pub fn rects(&self, note: u8) -> Vec<[f32; 4]> {
+        if !(21..=108).contains(&note) || self.white.len() != 53 || self.black.len() != 36 {
+            return Vec::new();
+        }
+        let before = |black: bool| (21..note).filter(|&n| is_black(n) == black).count();
+        if is_black(note) {
+            let [x0, x1] = self.black[before(true)];
+            return vec![[x0, self.top, x1, self.black_bottom]];
+        }
+        let i = before(false);
+        let (mut l, mut r) = (self.white[i], self.white[i + 1]);
+        if note > 21 && is_black(note - 1) {
+            l = l.max(self.black[before(true) - 1][1]);
+        }
+        if note < 108 && is_black(note + 1) {
+            r = r.min(self.black[before(true)][0]);
+        }
+        vec![[self.white[i], self.black_bottom, self.white[i + 1], self.bottom], [l, self.top, r, self.black_bottom]]
+    }
 }
 
 fn f(v: &Value) -> f32 {
@@ -142,6 +188,13 @@ impl Layout {
             faders: controls(&v["faders"]),
             buttons: controls(&v["buttons"]),
             groups: map("group_names").into_iter().map(|(k, n)| (k, n.as_str().unwrap_or("").to_owned())).collect(),
+            minikeys: MiniKeys {
+                white: v["minikeys"]["white"].as_array().map(|a| a.iter().map(f).collect()).unwrap_or_default(),
+                black: v["minikeys"]["black"].as_array().map(|a| a.iter().map(pt).collect()).unwrap_or_default(),
+                top: f(&v["minikeys"]["top"]),
+                black_bottom: f(&v["minikeys"]["black_bottom"]),
+                bottom: f(&v["minikeys"]["bottom"]),
+            },
         }
     }
 
@@ -247,6 +300,28 @@ impl Map {
     }
 }
 
+/// The small drawing of the keyboard lights the keys you play: they fade with the columns on the
+/// screen (2 s, or as long as the string sounds under the pedal). Left of middle C vermilion,
+/// from middle C up indigo.
+fn played_keys(p: &egui::Painter, m: &Map, velo: &Velo, now: f64) {
+    let mut lit = [0f32; 128];
+    for h in &velo.hits {
+        let a = &mut lit[h.note as usize & 127];
+        *a = a.max(h.alpha(now));
+    }
+    for (note, &a) in lit.iter().enumerate().filter(|(_, &a)| a > 0.0) {
+        let note = note as u8;
+        let col = if note < SPLIT { LEFT_HAND } else { RIGHT_HAND };
+        let strength = if is_black(note) { 0.92 } else { 0.72 };
+        let mk = &layout().minikeys;
+        for [x0, y0, x1, y1] in mk.rects(note) {
+            // inset from the outline, but no seam where the two parts of a white key meet
+            let (y0, y1) = (if y0 == mk.black_bottom { y0 } else { y0 + 1.0 }, if y1 == mk.black_bottom { y1 } else { y1 - 1.0 });
+            p.rect_filled(m.r(x0 + 1.0, y0, x1 - 1.0, y1), CornerRadius::ZERO, col.gamma_multiply(strength * a));
+        }
+    }
+}
+
 /// A paper label with a hairline border (inverted: ink with paper letters).
 fn tag(p: &egui::Painter, m: &Map, cx: f32, cy: f32, text: &str, inverted: bool) -> Rect {
     tag_sized(p, m, cx, cy, text, inverted, 17.0)
@@ -316,6 +391,7 @@ pub fn draw(ui: &mut egui::Ui, s: &LiveState, tex: &TextureHandle, velo: &Velo, 
 
     lcd(ui, &p, &m, s, fresh, reading, &mut command);
     screen(&p, &m, s, velo, curves, prefs.screen);
+    played_keys(&p, &m, velo, now);
 
     // --- Audio Controls: the plugin's own button switches the lower screen ---
     let [bx, by, bs] = lay.screen_button;
@@ -663,6 +739,34 @@ mod tests {
             let info = png::Decoder::new(std::io::Cursor::new(bytes)).read_info().unwrap().info().clone();
             assert_eq!((info.width, info.height), (1920, 1920), "{name}");
         }
+    }
+
+    #[test]
+    fn every_key_of_the_small_keyboard_has_its_place() {
+        let mk = &layout().minikeys;
+        assert_eq!((mk.white.len(), mk.black.len()), (53, 36));
+        let mut last_black = 0.0;
+        for n in 21..=108u8 {
+            let r = mk.rects(n);
+            assert_eq!(r.len(), if is_black(n) { 1 } else { 2 }, "{n}");
+            for [x0, y0, x1, y1] in &r {
+                assert!(x0 < x1 && y0 < y1, "{n}");
+            }
+            if is_black(n) {
+                assert!(r[0][0] > last_black, "black keys go left to right: {n}");
+                last_black = r[0][0];
+                // a black key sits on the line between its two white neighbours
+                let (l, h) = (mk.rects(n - 1)[0], mk.rects(n + 1)[0]);
+                assert!(r[0][0] < l[2] + 1.0 && r[0][2] > h[0] - 1.0, "{n}");
+            } else {
+                // the upper part never covers a black neighbour
+                for b in [n.wrapping_sub(1), n + 1].into_iter().filter(|&b| (21..=108).contains(&b) && is_black(b)) {
+                    let k = mk.rects(b)[0];
+                    assert!(r[1][2] <= k[0] || r[1][0] >= k[2], "{n} vs {b}");
+                }
+            }
+        }
+        assert!(mk.rects(20).is_empty() && mk.rects(109).is_empty());
     }
 
     #[test]
