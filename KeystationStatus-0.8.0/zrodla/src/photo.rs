@@ -659,7 +659,7 @@ fn screen(p: &egui::Painter, m: &Map, s: &LiveState, velo: &Velo, curves: &Curve
                 continue;
             }
             let black = matches!(h.note % 12, 1 | 3 | 6 | 8 | 10);
-            let col = if black { ACCENT } else { INK };
+            let col = INK; // every note the same colour (16.11: Miki)
             // the column ends on the curve of its key colour, never above it
             let curve = if black { &curves.black } else { &curves.white };
             let top = curve.get(h.raw as usize).copied().unwrap_or(h.vel);
@@ -674,7 +674,7 @@ fn screen(p: &egui::Painter, m: &Map, s: &LiveState, velo: &Velo, curves: &Curve
             p.text(m.p(px0 + 22.0, py0 + 40.0), Align2::LEFT_CENTER, format!("{:03}", h.vel), m.font(MONO_M, 54.0), INK.gamma_multiply(a));
             p.text(m.p(px0 + 24.0, py0 + 80.0), Align2::LEFT_CENTER, format!("{} {}", note_name(h.note), if h.sustained { "// PEDAŁ" } else { "" }), m.font(MONO, 16.0), GREY);
         }
-        p.text(m.p(px1, py0 + 18.0), Align2::RIGHT_CENTER, "━ BIAŁE   ━ CZARNE (ZIELONE KOLUMNY)", m.font(MONO, 13.0), GREY);
+        p.text(m.p(px1, py0 + 18.0), Align2::RIGHT_CENTER, "━ BIAŁE   ─ CZARNE", m.font(MONO, 13.0), GREY);
         p.text(m.p(x0 + 26.0, foot_y), Align2::LEFT_CENTER, "X: SIŁA KLAWISZA  //  Y: CO DOSTAJE INSTRUMENT", m.font(MONO, 14.0), GREY);
     } else {
         let bins = histogram(&velo.history, 32);
