@@ -1,0 +1,453 @@
+{
+ "width": 998,
+ "height": 567,
+ "lcd": [
+  505,
+  76,
+  797,
+  232
+ ],
+ "tabs": [
+  262,
+  10,
+  480,
+  34
+ ],
+ "knob_r": 21,
+ "fader_track": {
+  "top": 349,
+  "bottom": 479
+ },
+ "button_size": [
+  35,
+  32
+ ],
+ "groups": {
+  "charakter": "#f0b35a",
+  "mechanika": "#5fcfb8",
+  "przestrzen": "#9fb2ff",
+  "router": "#ff8a4c",
+  "mikser": "#d9d4cb",
+  "pedal": "#ff8a4c",
+  "studio": "#8fc3ff",
+  "trener": "#c39bff",
+  "wolny": "#8a857c"
+ },
+ "group_names": {
+  "charakter": "Charakter (Pianoteq)",
+  "mechanika": "Mechanika (Pianoteq)",
+  "przestrzen": "Przestrzeń (Pianoteq)",
+  "router": "Router",
+  "mikser": "Mikser Studio One",
+  "pedal": "Router: pedał i czucie",
+  "studio": "Studio One",
+  "trener": "Pilot Trenera",
+  "wolny": "Wolny"
+ },
+ "knobs": [
+  {
+   "id": "B26",
+   "x": 36,
+   "y": 336,
+   "short": "Szerokość",
+   "long": "Szerokość stereo",
+   "group": "przestrzen"
+  },
+  {
+   "id": "B27",
+   "x": 92,
+   "y": 336,
+   "short": "Sala",
+   "long": "Wielkość sali (pogłos)",
+   "group": "przestrzen"
+  },
+  {
+   "id": "B28",
+   "x": 149,
+   "y": 336,
+   "short": "Barwa sali",
+   "long": "Barwa pogłosu",
+   "group": "przestrzen"
+  },
+  {
+   "id": "B29",
+   "x": 205,
+   "y": 336,
+   "short": "Odbicia",
+   "long": "Wczesne odbicia",
+   "group": "przestrzen"
+  },
+  {
+   "id": "B30",
+   "x": 262,
+   "y": 336,
+   "short": "Duplex",
+   "long": "Blask góry (duplex)",
+   "group": "przestrzen"
+  },
+  {
+   "id": "B31",
+   "x": 318,
+   "y": 336,
+   "short": "Una corda",
+   "long": "Siła una cordy (przycisk B48)",
+   "group": "przestrzen"
+  },
+  {
+   "id": "B32",
+   "x": 375,
+   "y": 336,
+   "short": "Metal ff",
+   "long": "Metaliczny blask w fortissimo",
+   "group": "przestrzen"
+  },
+  {
+   "id": "B33",
+   "x": 431,
+   "y": 336,
+   "short": "Głośność",
+   "long": "Głośność instrumentu",
+   "group": "przestrzen"
+  },
+  {
+   "id": "B18",
+   "x": 35,
+   "y": 401,
+   "short": "Młotki",
+   "long": "Odgłos młotków",
+   "group": "mechanika"
+  },
+  {
+   "id": "B19",
+   "x": 91,
+   "y": 401,
+   "short": "Pedał",
+   "long": "Odgłos pedału",
+   "group": "mechanika"
+  },
+  {
+   "id": "B20",
+   "x": 149,
+   "y": 401,
+   "short": "Puszczenie",
+   "long": "Odgłos puszczenia klawisza",
+   "group": "mechanika"
+  },
+  {
+   "id": "B21",
+   "x": 204,
+   "y": 401,
+   "short": "Tłumiki",
+   "long": "Odgłos tłumików",
+   "group": "mechanika"
+  },
+  {
+   "id": "B22",
+   "x": 261,
+   "y": 401,
+   "short": "Wybrzmienie",
+   "long": "Wybrzmienie po puszczeniu klawisza",
+   "group": "mechanika"
+  },
+  {
+   "id": "B23",
+   "x": 318,
+   "y": 401,
+   "short": "Zużycie",
+   "long": "Zużycie instrumentu",
+   "group": "mechanika"
+  },
+  {
+   "id": "B24",
+   "x": 374,
+   "y": 401,
+   "short": "Rozstrojenie",
+   "long": "Rozstrojenie strun",
+   "group": "mechanika"
+  },
+  {
+   "id": "B25",
+   "x": 430,
+   "y": 401,
+   "short": "Bezpośredni",
+   "long": "Dźwięk bezpośredni (bliskość mikrofonów)",
+   "group": "mechanika"
+  },
+  {
+   "id": "B10",
+   "x": 34,
+   "y": 468,
+   "short": "Barwa",
+   "long": "Barwa: w lewo ciemno, w prawo jasno",
+   "group": "charakter"
+  },
+  {
+   "id": "B11",
+   "x": 90,
+   "y": 468,
+   "short": "Atak",
+   "long": "Atak młotka: w lewo miękko, w prawo twardo",
+   "group": "charakter"
+  },
+  {
+   "id": "B12",
+   "x": 147,
+   "y": 468,
+   "short": "Dynamika",
+   "long": "Zakres dynamiki instrumentu (w prawo łatwiej o ff)",
+   "group": "charakter"
+  },
+  {
+   "id": "B13",
+   "x": 204,
+   "y": 468,
+   "short": "Czułość",
+   "long": "Czułość dotyku w Pianotequ",
+   "group": "charakter"
+  },
+  {
+   "id": "B14",
+   "x": 261,
+   "y": 468,
+   "short": "Rezonans",
+   "long": "Rezonans strun (współbrzmienie)",
+   "group": "charakter"
+  },
+  {
+   "id": "B15",
+   "x": 317,
+   "y": 468,
+   "short": "Klapa",
+   "long": "Klapa: w lewo zamknięta, w prawo otwarta",
+   "group": "charakter"
+  },
+  {
+   "id": "B16",
+   "x": 374,
+   "y": 468,
+   "short": "Pogłos",
+   "long": "Pogłos: ilość (działa w presetach z włączonym Reverb)",
+   "group": "charakter"
+  },
+  {
+   "id": "B17",
+   "x": 431,
+   "y": 468,
+   "short": "Półpedał",
+   "long": "Głębokość półpedału w routerze (gdy półpedał jest włączony)",
+   "group": "router"
+  }
+ ],
+ "faders": [
+  {
+   "id": "C1",
+   "x": 488,
+   "short": "Kanał 1",
+   "long": "Głośność kanału 1 w mikserze Studio One (od lewej). Do oporu w górę = dokładnie 0 dB.",
+   "group": "mikser",
+   "y": 414
+  },
+  {
+   "id": "C2",
+   "x": 545,
+   "short": "Kanał 2",
+   "long": "Głośność kanału 2 w mikserze Studio One (od lewej). Do oporu w górę = dokładnie 0 dB.",
+   "group": "mikser",
+   "y": 414
+  },
+  {
+   "id": "C3",
+   "x": 602,
+   "short": "Kanał 3",
+   "long": "Głośność kanału 3 w mikserze Studio One (od lewej). Do oporu w górę = dokładnie 0 dB.",
+   "group": "mikser",
+   "y": 414
+  },
+  {
+   "id": "C4",
+   "x": 659,
+   "short": "Kanał 4",
+   "long": "Głośność kanału 4 w mikserze Studio One (od lewej). Do oporu w górę = dokładnie 0 dB.",
+   "group": "mikser",
+   "y": 414
+  },
+  {
+   "id": "C5",
+   "x": 716,
+   "short": "Kanał 5",
+   "long": "Głośność kanału 5 w mikserze Studio One (od lewej). Do oporu w górę = dokładnie 0 dB.",
+   "group": "mikser",
+   "y": 414
+  },
+  {
+   "id": "C6",
+   "x": 773,
+   "short": "Kanał 6",
+   "long": "Głośność kanału 6 w mikserze Studio One (od lewej). Do oporu w górę = dokładnie 0 dB.",
+   "group": "mikser",
+   "y": 414
+  },
+  {
+   "id": "C7",
+   "x": 830,
+   "short": "Kanał 7",
+   "long": "Głośność kanału 7 w mikserze Studio One (od lewej). Do oporu w górę = dokładnie 0 dB.",
+   "group": "mikser",
+   "y": 414
+  },
+  {
+   "id": "C8",
+   "x": 887,
+   "short": "Kanał 8",
+   "long": "Głośność kanału 8 w mikserze Studio One (od lewej). Do oporu w górę = dokładnie 0 dB.",
+   "group": "mikser",
+   "y": 414
+  },
+  {
+   "id": "C9",
+   "x": 944,
+   "short": "MAIN",
+   "long": "Głośność Main w Studio One. Do oporu w górę = dokładnie 0 dB.",
+   "group": "mikser",
+   "y": 414
+  }
+ ],
+ "buttons": [
+  {
+   "id": "B44",
+   "x": 33,
+   "y": 535,
+   "short": "Uzbrój",
+   "long": "Uzbrój zaznaczoną ścieżkę do nagrania (Studio One)",
+   "group": "studio"
+  },
+  {
+   "id": "B45",
+   "x": 90,
+   "y": 535,
+   "short": "Odsłuch",
+   "long": "Odsłuch zaznaczonej ścieżki (Studio One)",
+   "group": "studio"
+  },
+  {
+   "id": "B46",
+   "x": 147,
+   "y": 535,
+   "short": "Sustain",
+   "long": "Pedał działa jako sustain",
+   "group": "pedal"
+  },
+  {
+   "id": "B47",
+   "x": 204,
+   "y": 535,
+   "short": "Sostenuto",
+   "long": "Pedał działa jako sostenuto (drugi raz = z powrotem sustain)",
+   "group": "pedal"
+  },
+  {
+   "id": "B48",
+   "x": 261,
+   "y": 535,
+   "short": "Una corda",
+   "long": "Una corda włącz / wyłącz (siła: pokrętło B31)",
+   "group": "pedal"
+  },
+  {
+   "id": "B49",
+   "x": 318,
+   "y": 535,
+   "short": "Metronom",
+   "long": "Metronom w Studio One",
+   "group": "studio"
+  },
+  {
+   "id": "B50",
+   "x": 375,
+   "y": 535,
+   "short": "Cofnij",
+   "long": "Cofnij ostatnią zmianę w Studio One",
+   "group": "studio"
+  },
+  {
+   "id": "B51",
+   "x": 432,
+   "y": 535,
+   "short": "Zapisz",
+   "long": "Zapisz projekt Studio One",
+   "group": "studio"
+  },
+  {
+   "id": "C52",
+   "x": 489,
+   "y": 535,
+   "short": "Słuchawki",
+   "long": "Słuchawki ↔ głośniki (Listen Bus w Studio One)",
+   "group": "studio"
+  },
+  {
+   "id": "C53",
+   "x": 545,
+   "y": 535,
+   "short": "Czucie",
+   "long": "Czucie klawiatury po kolei: Light → Acoustic → Heavy → Moje → Moje 3",
+   "group": "pedal"
+  },
+  {
+   "id": "C54",
+   "x": 602,
+   "y": 535,
+   "short": "wolny",
+   "long": "Wolny przycisk (router go połyka)",
+   "group": "wolny"
+  },
+  {
+   "id": "C55",
+   "x": 659,
+   "y": 535,
+   "short": "wolny",
+   "long": "Wolny przycisk (router go połyka)",
+   "group": "wolny"
+  },
+  {
+   "id": "C56",
+   "x": 716,
+   "y": 535,
+   "short": "Start",
+   "long": "Trener: start / dalej",
+   "group": "trener"
+  },
+  {
+   "id": "C57",
+   "x": 773,
+   "y": 535,
+   "short": "Powtórz",
+   "long": "Trener: powtórz",
+   "group": "trener"
+  },
+  {
+   "id": "C58",
+   "x": 830,
+   "y": 535,
+   "short": "Podpowiedź",
+   "long": "Trener: podpowiedź (i szczegóły wyniku)",
+   "group": "trener"
+  },
+  {
+   "id": "C59",
+   "x": 887,
+   "y": 535,
+   "short": "Pauza",
+   "long": "Trener: pauza",
+   "group": "trener"
+  },
+  {
+   "id": "C60",
+   "x": 944,
+   "y": 535,
+   "short": "Koniec",
+   "long": "Trener: koniec",
+   "group": "trener"
+  }
+ ]
+}
