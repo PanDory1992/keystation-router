@@ -501,3 +501,23 @@ def test_moje3_map_has_no_ceiling_and_is_monotone():
     d = json.loads((Path(__file__).parent / "velocity-map.moje3.json").read_text(encoding="utf-8"))
     w = d["white"]
     assert all(x <= y for x, y in zip(w[1:], w[2:])) and all(w[i] >= i for i in range(110, 128)) and w[1] == 9 and d["black"][1] == 14
+
+
+# --- 15.11: SysEx backup ------------------------------------------------------------------
+from pedal_router import SYSEX_PROBES, SysexLog  # noqa: E402
+
+
+def test_sysex_log_one_file_per_burst(tmp_path):
+    log = SysexLog(tmp_path)
+    a = log.feed([0xF0, 0x00, 0x20, 0x08, 0xF7], 1000.0)
+    b = log.feed([0xF0, 0x01, 0xF7], 1001.0)
+    c = log.feed([0xF0, 0x02, 0xF7], 1010.0)
+    assert a == b and c != a
+    assert a.read_bytes() == bytes([0xF0, 0x00, 0x20, 0x08, 0xF7, 0xF0, 0x01, 0xF7])
+
+
+def test_sysex_probes_are_read_only_requests():
+    assert set(SYSEX_PROBES) == {"identity", "dump"}
+    for msg in SYSEX_PROBES.values():
+        assert msg[0] == 0xF0 and msg[-1] == 0xF7 and all(b < 0x80 for b in msg[1:-1])
+    assert SYSEX_PROBES["identity"] == bytes.fromhex("F07E7F0601F7")

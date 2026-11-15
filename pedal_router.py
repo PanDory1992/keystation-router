@@ -143,6 +143,30 @@ def load_options(path=None) -> dict:
         return {}
 # Commands from the plugin (06.11): {"v":1,"id":..,"set":{"mode","una_corda","touch","ones"}}
 CMD_FILE = ROOT / "live-cmd.json"
+# 15.11: SysEx from the keyboard (memory dump RECALL + STORE, answers to probes) is saved to sysex/*.syx;
+# a burst = one file (a new file after 3 s of silence). Probes the router may send (plugin command "sysex_probe"),
+# taken from Evolution's Enigma 1.2 (Enigma.exe); only these two, nothing that writes to the keyboard:
+SYSEX_DIR = ROOT / "sysex"
+SYSEX_PROBES = {
+    "identity": bytes.fromhex("F07E7F0601F7"),          # universal Identity Request: model + firmware version
+    "dump": bytes.fromhex("F0002008107F0000F7"),        # Evolution request 0 (Enigma's preset request)
+}
+
+
+class SysexLog:
+    """Collects SysEx messages into .syx files, one file per burst."""
+    def __init__(self, folder: Path, gap: float = 3.0):
+        self.folder, self.gap, self.path, self.last = folder, gap, None, -1e9
+
+    def feed(self, message, now: float) -> Path:
+        if self.path is None or now - self.last > self.gap:
+            self.folder.mkdir(exist_ok=True)
+            stamp = datetime.datetime.fromtimestamp(now).strftime("%Y%m%d-%H%M%S")
+            self.path = self.folder / f"keystation-{stamp}.syx"
+        with open(self.path, "ab") as f:
+            f.write(bytes(message))
+        self.last = now
+        return self.path
 CMD_POLL_S = 0.04
 # UDP bus (06.11): notes, pedal, buttons and state, live, for any number of listeners on
 # this PC (127.0.0.1:47800, protocol in udp_bus.py). File "szyna-off" turns it off.
@@ -680,6 +704,7 @@ def run():
     signal.signal(signal.SIGTERM, stop)
 
     io_lock = threading.Lock()
+    sysex_log = SysexLog(SYSEX_DIR)
 
     def send(dest, packet):
         ports[dest].send(packet)
@@ -794,8 +819,30 @@ def run():
 
     threading.Thread(target=live_writer, name="live-json", daemon=True).start()
 
+    def send_probe(name):
+        """Send one whitelisted SysEx probe to the keyboard's own MIDI input (its USB output port)."""
+        out = rtmidi.MidiOut(rtmidi.API_WINDOWS_MM)
+        try:
+            names = out.get_ports()
+            match = find_input(names)
+            if match is None:
+                logging.warning("SysEx probe %s: keyboard output not found; outputs: %s", name, names)
+                return
+            out.open_port(match)
+            out.send_message(list(SYSEX_PROBES[name]))
+            logging.info("SysEx probe %s sent to %s: %s", name, names[match], SYSEX_PROBES[name].hex(" "))
+        except Exception as exc:
+            logging.warning("SysEx probe %s failed (is another program holding the keyboard's output?): %s", name, exc)
+        finally:
+            try:
+                out.close_port()
+            except Exception:
+                pass
+
     def apply_command(want):
         """Same effect as pressing the physical buttons."""
+        if want.get("sysex_probe") in SYSEX_PROBES:
+            send_probe(want["sysex_probe"])
         presses = []
         mode = want.get("mode")
         if mode in PROGRAM_BUTTONS.values() and mode != mapper.mode:
@@ -962,6 +1009,9 @@ def run():
         message, _delta = event
         try:
             now = time.time()
+            if message and message[0] == 0xF0:
+                path = sysex_log.feed(message, now)
+                logging.info("SysEx from keyboard: %d bytes -> %s (%s ...)", len(message), path.name, bytes(message[:12]).hex(" "))
             t0 = time.perf_counter()
             old_mode = mapper.mode
             routed = dispatch(message)
