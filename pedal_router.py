@@ -80,12 +80,21 @@ TOUCH_BUTTONS = {9: "light", 10: "acoustic", 11: "heavy"}   # file names / plugi
 TOUCH_CYCLE_BUTTON = 9
 FREE_BUTTONS = (10, 11)
 # 15.11: "moje" = a curve fitted to Miki's own playing (contrast-limited equalisation of his raw velocities,
-# slope <= 2.5) plus contextual denoising; only from the plugin (no physical button). Study: symulacja-krzywej-20261115.
+# slope <= 2.5) plus contextual denoising and censored-1 handling (v2, below). Study: symulacja-krzywej-20261115.
 TOUCH_MODES = ("light", "acoustic", "heavy", "moje")
 DENOISE_K = 0.35         # pull toward the phrase level (35%) ...
 DENOISE_TAU = 12.0       # ... only for deviations within the sensor noise (~2 sigma); accents pass
 DENOISE_ALPHA = 0.3      # phrase level: running average of raw velocities
 DENOISE_GAP = 1.5        # s of silence = a new phrase
+# 15.11 (moje v2): one curve for both colours (in one chord black reads -0.7 raw vs white: one sensor scale).
+# Raw 1 = too slow to measure: white -> the map's white[1] (just below the floor), black -> black[1] (mean of the
+# black hole, 1..40). A black 1 within ONE_CHORD_WINDOW after measured notes of median >= ONE_CHORD_LOUD is a read
+# error with P = ONE_CHORD_P (4.4% of such notes vs 1.7% expected): expected output = P * chord + (1 - P) * hole.
+# The phrase rule for ones (ONES_STEP / ONES_CAP) is not used in "moje". Study: symulacja-krzywej-20261115/RAPORT-moje2.md
+ONE_CHORD_WINDOW = 0.03
+ONE_CHORD_LOUD = 80
+ONE_CHORD_P = 0.6
+BLACK_MEASURED_MIN = 41  # the black sensor never sends 2..40
 TOUCH_FILE = ROOT / "touch-mode"
 DEFAULT_TOUCH = "acoustic"
 MONITOR_NAME = "Keystation Monitor"   # copy of played notes (after mapping) for the dynamics mirror page
@@ -245,6 +254,7 @@ class PedalMapper:
         self.ones_context = True
         self.raw_level = [None] * 16      # "moje": running raw level per channel (denoising)
         self.raw_time = [0.0] * 16
+        self.raw_recent = [[] for _ in range(16)]   # "moje": (time, raw) of measured notes in the last ONE_CHORD_WINDOW
         self.phrase_level = [None] * 16   # running output level per channel
         self.phrase_time = [0.0] * 16
         self.pedal_out = [0] * 16         # what was last sent for the pedal (half pedal: depth)
@@ -335,7 +345,7 @@ class PedalMapper:
         self.select_touch(modes[k % len(modes)])
         return self.touch_mode
 
-    def denoise(self, channel: int, raw: int, now: float) -> int:
+    def denoise(self, channel: int, raw: int, now: float, lo: int = 2) -> int:
         """Empirical-Bayes shrinkage toward the phrase level: small deviations (sensor noise) are pulled in by
         DENOISE_K, bigger ones (accents, a voiced melody) keep all but a constant K*TAU. Causal: past notes only."""
         level = self.raw_level[channel]
@@ -345,7 +355,25 @@ class PedalMapper:
         d = d * (1 - DENOISE_K) if abs(d) <= DENOISE_TAU else d - (DENOISE_K * DENOISE_TAU if d > 0 else -DENOISE_K * DENOISE_TAU)
         self.raw_level[channel] = (1 - DENOISE_ALPHA) * level + DENOISE_ALPHA * raw
         self.raw_time[channel] = now
-        return max(2, min(127, int(round(level + d))))
+        return max(lo, min(127, int(round(level + d))))
+
+    def moje_one(self, channel: int, black: bool, now: float) -> int:
+        """Raw 1 in "moje": censored, not silent. See ONE_CHORD_* above."""
+        white_t, black_t = self.velocity_map
+        if not black:
+            return white_t[1]
+        mates = sorted(r for t0, r in self.raw_recent[channel] if now - t0 <= ONE_CHORD_WINDOW)
+        if mates:
+            k = len(mates) // 2
+            m = mates[k] if len(mates) % 2 else (mates[k - 1] + mates[k]) / 2
+            if m >= ONE_CHORD_LOUD:
+                return int(round(ONE_CHORD_P * white_t[int(round(m))] + (1 - ONE_CHORD_P) * black_t[1]))
+        return black_t[1]
+
+    def remember_raw(self, channel: int, raw: int, now: float):
+        recent = [(t0, r) for t0, r in self.raw_recent[channel] if now - t0 <= ONE_CHORD_WINDOW]
+        recent.append((now, raw))
+        self.raw_recent[channel] = recent
 
     def ones_velocity(self, channel: int, now: float, floor: int) -> int:
         """Raw 1 = too slow to measure. floor = what the map gives a lone 1 (ppp)."""
@@ -434,11 +462,19 @@ class PedalMapper:
             if is_on:
                 notes.add(data[1])
                 if self.velocity_map is not None:
-                    table = self.velocity_map[1 if data[1] % 12 in BLACK_KEYS else 0]
-                    if data[2] == 1 and self.ones_context:
+                    black = data[1] % 12 in BLACK_KEYS
+                    table = self.velocity_map[1 if black else 0]
+                    moje = self.touch_mode == "moje"
+                    if data[2] == 1 and moje:
+                        out = self.moje_one(channel, black, now)
+                    elif data[2] == 1 and self.ones_context:
                         out = self.ones_velocity(channel, now, table[1])
                     else:
-                        raw = self.denoise(channel, data[2], now) if self.touch_mode == "moje" and data[2] > 1 else data[2]
+                        raw = data[2]
+                        if moje and raw > 1:
+                            lo = BLACK_MEASURED_MIN if black and raw >= BLACK_MEASURED_MIN else 2
+                            raw = self.denoise(channel, raw, now, lo)
+                            self.remember_raw(channel, data[2], now)
                         out = table[raw]
                         self.note_played(channel, out, now)
                     return [bytes((status, data[1], out))]

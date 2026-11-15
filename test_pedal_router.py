@@ -416,3 +416,46 @@ def test_one_button_steps_through_touch_modes():
     assert m.route([0xC0, 10]) == [] and m.route([0xC0, 11]) == [] and m.touch_mode == "acoustic"
     del m.touch_maps["heavy"]                   # a missing preset file is skipped
     m.route([0xC0, 9]); assert m.touch_mode == "moje"
+
+
+# --- 15.11: moje v2 (one curve, censored 1s, a black 1 after a loud chord) ------------------
+def _moje2():
+    m = PedalMapper()
+    white = list(range(128)); white[1] = 9
+    black = list(range(128)); black[1] = 14
+    m.touch_maps = {"light": (list(range(128)), list(range(128))), "moje": (white, black)}
+    m.select_touch("moje")
+    return m
+
+
+def test_moje2_ones_are_censored_soft_notes_not_the_phrase_rule():
+    m = _moje2()
+    m.route([0x90, 60, 100], now=0.0)
+    assert m.route([0x90, 62, 1], now=0.3)[0][1][2] == 9      # white: just below the floor, whatever the phrase
+    assert m.route([0x90, 61, 1], now=0.6)[0][1][2] == 14     # black alone: the hole mean
+
+
+def test_moje2_black_one_right_after_a_loud_chord_is_mostly_the_chord():
+    m = _moje2()
+    m.route([0x90, 60, 100], now=0.0)
+    m.route([0x90, 64, 100], now=0.005)
+    assert m.route([0x90, 66, 1], now=0.01)[0][1][2] == round(0.6 * 100 + 0.4 * 14)
+    m.route([0x90, 72, 60], now=1.0)                          # quiet chord: a real soft note
+    assert m.route([0x90, 73, 1], now=1.01)[0][1][2] == 14
+    assert m.route([0x90, 75, 1], now=1.2)[0][1][2] == 14     # too late for the chord
+
+
+def test_moje2_measured_black_stays_measured_under_denoise():
+    m = _moje2()
+    m.route([0x90, 60, 20], now=0.0)
+    m.route([0x90, 62, 20], now=0.2)
+    assert m.route([0x90, 61, 41], now=0.4)[0][1][2] >= 41    # pulled toward 20, but a black reading is >= 41
+
+
+def test_moje2_real_map_is_monotone_and_one_curve():
+    import json
+    d = json.loads((Path(__file__).parent / "velocity-map.moje.json").read_text(encoding="utf-8"))
+    w, b = d["white"], d["black"]
+    assert all(x <= y for x, y in zip(w[1:], w[2:])) and all(x <= y for x, y in zip(b[1:], b[2:]))
+    assert w[41:] == b[41:] and w[127] == 127
+    assert w[1] < w[2] and b[1] < b[41] and w[1] < b[1]
