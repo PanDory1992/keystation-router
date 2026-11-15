@@ -449,5 +449,25 @@
    "long": "Trener: koniec",
    "group": "trener"
   }
+ ],
+ "read_button": [
+  488,
+  10,
+  650,
+  34
+ ],
+ "snapshot_keys": [
+  [
+   852,
+   232
+  ],
+  [
+   962,
+   233
+  ]
+ ],
+ "snapshot_key_size": [
+  36,
+  31
  ]
 }

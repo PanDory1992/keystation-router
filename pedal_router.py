@@ -284,6 +284,22 @@ def control_of(message) -> tuple[str, int] | None:
     return None
 
 
+# 15.11: knob/fader positions survive a router restart (the knobs do not move while the PC is off).
+CONTROLS_FILE = ROOT / "controls.json"
+# "Read positions" from the plugin: for this long, knob/fader messages only update the positions and
+# go nowhere else, so pressing SNAPSHOT (+ and - together) does not touch Pianoteq or the mixer.
+READ_CONTROLS_S = 6.0
+
+
+def load_controls(path=CONTROLS_FILE) -> dict:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return {k: int(v) for k, v in data.items()
+                if isinstance(k, str) and isinstance(v, int) and 0 <= v <= 127 and k in set(CONTROL_LABELS.values()) | {"B32"}}
+    except Exception:
+        return {}
+
+
 def button_label(program: int) -> str | None:
     """Program Change from the P10 buttons: 0..7 = B44..B51, 8..16 = C52..C60."""
     if 0 <= program <= 7:
@@ -804,7 +820,9 @@ def run():
 
     live_event = threading.Event()
     live_last = {}
-    live_controls = {}      # 15.11: "B10".."B33", "C1".."C9" -> last value (photo view of the plugin)
+    live_controls = load_controls()   # 15.11: "B10".."B33", "C1".."C9" -> last value (photo view of the plugin)
+    controls_saved = [dict(live_controls), 0.0]
+    read_controls = [0.0]             # until when knob/fader messages are only read (SNAPSHOT from the plugin)
     live_button = {}        # 15.11: last P10 button pressed: {"label": "C53", "t": unix time}
     bus_ref = [None]
 
@@ -826,6 +844,7 @@ def run():
             "last": dict(live_last) or None,
             "controls": dict(live_controls),
             "button": dict(live_button) or None,
+            "reading": round(max(0.0, read_controls[0] - time.time()), 1),
             "updated": time.time(),
         }
 
@@ -841,11 +860,19 @@ def run():
                 os.replace(tmp, LIVE_FILE)
             except OSError:
                 pass          # file briefly busy: the next change or tick rewrites it
+            if live_controls != controls_saved[0] and time.time() - controls_saved[1] >= 1.0:
+                try:
+                    tmp_c = CONTROLS_FILE.with_name("controls.json.tmp")
+                    tmp_c.write_text(json.dumps(live_controls), encoding="utf-8")
+                    os.replace(tmp_c, CONTROLS_FILE)
+                    controls_saved[0], controls_saved[1] = dict(live_controls), time.time()
+                except OSError:
+                    pass
             bus = bus_ref[0]
             if bus is not None:
                 # state on the bus: when a setting changes, else once a second (notes have
                 # their own events, so "last"/"updated" alone don't count as a change)
-                key = tuple(v for k, v in snap.items() if k not in ("last", "updated"))
+                key = tuple(v for k, v in snap.items() if k not in ("last", "updated", "controls", "button", "reading"))
                 if key != bus_sent[0] or time.time() - bus_sent[1] >= 1.0:
                     bus.state(snap)
                     bus_sent = (key, time.time())
@@ -902,6 +929,10 @@ def run():
             for packet in packets:
                 send(PLAY, packet)
         save_options()
+        if want.get("read_controls") is True:
+            read_controls[0] = time.time() + READ_CONTROLS_S
+            logging.info("Reading knob/fader positions for %.0f s (SNAPSHOT goes nowhere else)", READ_CONTROLS_S)
+            live_event.set()
         if "release_ms" in want:
             try:
                 value = set_release_ms(want.get("release_ms"))
@@ -1047,6 +1078,13 @@ def run():
                 path = sysex_log.feed(message, now)
                 logging.info("SysEx from keyboard: %d bytes -> %s (%s ...)", len(message), path.name, bytes(message[:12]).hex(" "))
             t0 = time.perf_counter()
+            early = control_of(message)
+            if early is not None and now < read_controls[0] and early[0] != "B17":
+                live_controls[early[0]] = early[1]      # read only: not to Pianoteq, not to the mixer
+                live_event.set()
+                messages += 1
+                last_input = now
+                return
             old_mode = mapper.mode
             routed = dispatch(message)
             took = time.perf_counter() - t0

@@ -7,7 +7,7 @@
 //!   {"v":1,"id":<unique>,"set":{"mode":"sostenuto","una_corda":true,
 //!                                "touch":"heavy","ones":"ppp",
 //!                                "half_pedal":true,"half_depth":80,"debounce":true,
-//!                                "release_ms":120}}
+//!                                "release_ms":120,"read_controls":true}}
 
 use serde_json::{json, Map, Value};
 use std::path::PathBuf;
@@ -24,6 +24,8 @@ pub enum Command {
     Debounce(bool),
     /// 0.4.0: how long the sustain pedal takes to fall when you let go (soft damper landing).
     ReleaseMs(u16),
+    /// 0.7.0: for a few seconds the router only reads knob/fader positions (press SNAPSHOT on the keyboard).
+    ReadControls,
 }
 
 impl Command {
@@ -37,6 +39,7 @@ impl Command {
             Command::HalfDepth(d) => set.insert("half_depth".into(), json!(d)),
             Command::Debounce(on) => set.insert("debounce".into(), json!(on)),
             Command::ReleaseMs(ms) => set.insert("release_ms".into(), json!(ms)),
+            Command::ReadControls => set.insert("read_controls".into(), json!(true)),
         };
     }
 }

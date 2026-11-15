@@ -544,3 +544,11 @@ def test_control_labels_cover_every_knob_and_fader():
 def test_button_labels():
     assert [button_label(p) for p in (0, 2, 4, 7, 8, 9, 16)] == ["B44", "B46", "B48", "B51", "C52", "C53", "C60"]
     assert button_label(17) is None
+
+
+def test_load_controls_keeps_only_valid_positions(tmp_path):
+    from pedal_router import load_controls
+    f = tmp_path / "controls.json"
+    f.write_text('{"B10": 64, "C9": 127, "B32": 5, "X1": 3, "B11": 300, "B12": "a"}', encoding="utf-8")
+    assert load_controls(f) == {"B10": 64, "C9": 127, "B32": 5}
+    assert load_controls(tmp_path / "missing.json") == {}

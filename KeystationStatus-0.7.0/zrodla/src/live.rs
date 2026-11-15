@@ -57,6 +57,8 @@ pub struct LiveState {
     /// Empty until the control is moved (or SNAPSHOT is pressed on the keyboard).
     pub controls: HashMap<String, u8>,
     pub button: Option<Pressed>,
+    /// 0.7.0: seconds left of "read positions" (router swallows knob/fader messages, SNAPSHOT is safe).
+    pub reading: f32,
     /// Unix time of the router's last write.
     pub updated: f64,
     /// Which file the state came from ("live.json" or "status.json").
@@ -108,6 +110,7 @@ impl LiveState {
                         .collect()
                 })
                 .unwrap_or_default(),
+            reading: n("reading").unwrap_or(0.0).clamp(0.0, 60.0) as f32,
             button: v.get("button").and_then(|b| {
                 Some(Pressed { label: b.get("label")?.as_str()?.to_owned(), t: b.get("t")?.as_f64()? })
             }),
@@ -161,6 +164,7 @@ impl LiveReader {
             HalfDepth(d) => self.state.half_depth = *d,
             Debounce(on) => self.state.debounce = Some(*on),
             ReleaseMs(ms) => self.state.release_ms = Some(*ms),
+            ReadControls => self.state.reading = 6.0,
         }
         self.hold_until = Some(Instant::now() + HOLD_AFTER_CLICK);
     }

@@ -49,6 +49,9 @@ pub struct Layout {
     pub fader_top: f32,
     pub fader_bottom: f32,
     pub button: [f32; 2],
+    pub read_button: [f32; 4],
+    pub snapshot_keys: Vec<[f32; 2]>,
+    pub snapshot_key: [f32; 2],
     pub knobs: Vec<Control>,
     pub faders: Vec<Control>,
     pub buttons: Vec<Control>,
@@ -108,6 +111,12 @@ impl Layout {
             fader_top: f(&v["fader_track"]["top"]),
             fader_bottom: f(&v["fader_track"]["bottom"]),
             button: [f(&v["button_size"][0]), f(&v["button_size"][1])],
+            read_button: rect4(&v["read_button"]),
+            snapshot_keys: v["snapshot_keys"]
+                .as_array()
+                .map(|a| a.iter().map(|p| [f(&p[0]), f(&p[1])]).collect())
+                .unwrap_or_default(),
+            snapshot_key: [f(&v["snapshot_key_size"][0]), f(&v["snapshot_key_size"][1])],
             knobs: controls(&v["knobs"]),
             faders: controls(&v["faders"]),
             buttons: controls(&v["buttons"]),
@@ -294,6 +303,41 @@ pub fn draw(ui: &mut egui::Ui, s: &LiveState, tex: &TextureHandle, view: &mut Vi
         *view = v;
     }
 
+    // --- read positions: router swallows knob/fader messages for a few seconds, then SNAPSHOT is safe ---
+    let reading = fresh && s.reading > 0.0;
+    let rb = lay.read_button;
+    let rr = m.r(rb[0], rb[1], rb[2], rb[3]);
+    let resp = ui
+        .interact(rr, ui.id().with("read-controls"), if fresh { Sense::click() } else { Sense::hover() })
+        .on_hover_text(
+            "Pokazuje, gdzie stoją wszystkie gałki i suwaki.\nKliknij, potem wciśnij na klawiaturze − i + naraz (SNAPSHOT).\nPrzez kilka sekund router tylko odczytuje pozycje: Pianoteq i mikser nic nie dostają.",
+        );
+    let cr = CornerRadius::from(rr.height() / 2.0);
+    let fill = if reading { AMBER } else if resp.hovered() { Color32::from_rgb(40, 38, 35) } else { PILL };
+    painter.rect_filled(rr, cr, fill);
+    painter.rect_stroke(rr, cr, Stroke::new(k.max(1.0), AMBER.gamma_multiply(0.8)), StrokeKind::Inside);
+    let label = if reading { format!("WCIŚNIJ − i +  ({:.0} s)", s.reading.ceil()) } else { "POZYCJE GAŁEK".to_owned() };
+    painter.text(
+        rr.center(),
+        Align2::CENTER_CENTER,
+        label,
+        FontId::new(10.5 * k, FontFamily::Name(CAPTION_FONT.into())),
+        if reading { Color32::from_rgb(20, 18, 15) } else { Color32::from_rgb(232, 226, 215) },
+    );
+    if resp.clicked() && fresh {
+        command = Some(Command::ReadControls);
+    }
+    if reading {
+        let blink = (now * 3.0).fract() < 0.6;
+        let [kw, kh] = lay.snapshot_key;
+        for [x, y] in &lay.snapshot_keys {
+            if blink {
+                painter.rect_stroke(m.rc(*x, *y, kw + 8.0, kh + 8.0), CornerRadius::from(6.0 * k), Stroke::new(3.0 * k, AMBER), StrokeKind::Inside);
+            }
+        }
+        ui.ctx().request_repaint();
+    }
+
     // --- LCD ---
     let [x0, y0, x1, y1] = lay.lcd;
     let lcd = FontId::new(17.5 * k, FontFamily::Name(LCD_FONT.into()));
@@ -400,12 +444,18 @@ pub fn draw(ui: &mut egui::Ui, s: &LiveState, tex: &TextureHandle, view: &mut Vi
             let text = format!("{}  {} > {}", note_name(last.note), last.raw, last.out);
             painter.text(m.p(x0 + 10.0, y1 - 12.0), Align2::LEFT_CENTER, text, lcd.clone(), INK);
         }
+        if reading {
+            painter.rect_filled(m.r(x0 + 4.0, y1 - 22.0, x1 - 4.0, y1 - 2.0), 0.0, Color32::from_rgba_premultiplied(150, 156, 156, 255));
+            let text = format!("WCIŚNIJ  −  i  +  NARAZ   {:.0} S", s.reading.ceil());
+            painter.text(m.p(x0 + 10.0, y1 - 12.0), Align2::LEFT_CENTER, text, lcd.clone(), INK);
+        } else {
         let status = match s.connected {
             Some(true) => "POŁĄCZONA",
             Some(false) => "BRAK KLAWIATURY",
             None => "?",
         };
         painter.text(m.p(x1 - 10.0, y1 - 12.0), Align2::RIGHT_CENTER, status, lcd.clone(), INK);
+        }
     }
 
     // --- knobs ---
@@ -432,7 +482,7 @@ pub fn draw(ui: &mut egui::Ui, s: &LiveState, tex: &TextureHandle, view: &mut Vi
         };
         let ink = if value.is_some() { AMBER } else { UNKNOWN };
         value_box(&painter, &m, c.x, c.y, if c.id == "B17" { 28.0 } else { 24.0 }, &shown, ink);
-        let now_text = if value.is_some() { shown.clone() } else { "nieznane, rusz pokrętłem (albo SNAPSHOT: + i − naraz)".into() };
+        let now_text = if value.is_some() { shown.clone() } else { "nieznane: kliknij POZYCJE GAŁEK (u góry) i wciśnij − i + na klawiaturze".into() };
         ui.interact(m.rc(c.x, c.y - 6.0, 2.0 * r + 6.0, 2.0 * r + 24.0), ui.id().with(&c.id), Sense::hover())
             .on_hover_text(tooltip(&c.id, lay.group_name(&c.group), &c.long, &now_text));
     }
@@ -456,7 +506,7 @@ pub fn draw(ui: &mut egui::Ui, s: &LiveState, tex: &TextureHandle, view: &mut Vi
             }
             None => value_box(&painter, &m, c.x, bottom - 30.0, 30.0, &shown, UNKNOWN),
         }
-        let now_text = if value.is_some() { shown.clone() } else { "nieznane, rusz suwakiem".into() };
+        let now_text = if value.is_some() { shown.clone() } else { "nieznane: kliknij POZYCJE GAŁEK (u góry) i wciśnij − i + na klawiaturze".into() };
         ui.interact(m.r(c.x - 18.0, top - 34.0, c.x + 18.0, bottom + 24.0), ui.id().with(&c.id), Sense::hover())
             .on_hover_text(tooltip(&c.id, lay.group_name(&c.group), &c.long, &now_text));
     }

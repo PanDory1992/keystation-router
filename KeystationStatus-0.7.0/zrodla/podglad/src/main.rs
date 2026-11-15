@@ -37,7 +37,7 @@ fn main() {
         "half_pedal":false,"half_depth":80,"debounce":false,"bounces":0,"release_ms":120,
         "last":{"note":61,"raw":98,"out":81},
         "controls":{"B10":64,"B11":90,"B12":30,"B13":100,"B16":20,"B18":40,"B26":110,"B27":70,"B33":127,"C1":100,"C2":80,"C9":127},
-        "button":{"label":"C53","t":NOW},"updated":NOW}"#;
+        "button":{"label":"C53","t":NOW},"reading":4.2,"updated":NOW}"#;
     let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs_f64() + 30.0;
     let v: serde_json::Value = serde_json::from_str(&json.replace("NOW", &now.to_string())).unwrap();
     let state = live::LiveState::from_json_pub(&v);
