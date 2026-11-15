@@ -459,3 +459,45 @@ def test_moje2_real_map_is_monotone_and_one_curve():
     assert all(x <= y for x, y in zip(w[1:], w[2:])) and all(x <= y for x, y in zip(b[1:], b[2:]))
     assert w[41:] == b[41:] and w[127] == 127
     assert w[1] < w[2] and b[1] < b[41] and w[1] < b[1]
+
+
+# --- 15.11: moje3 (v3e) ---------------------------------------------------------------
+def _moje3():
+    m = PedalMapper()
+    ident = list(range(128))
+    m.touch_maps = {"light": (ident, ident), "moje3": (ident, ident)}
+    assert m.select_touch("moje3")
+    return m
+
+
+def test_moje3_in_forte_a_small_deliberate_change_passes():
+    m3, m2 = _moje3(), _moje2()
+    m2.touch_maps["moje"] = (list(range(128)), list(range(128))); m2.select_touch("moje")
+    for mm in (m3, m2):
+        mm.route([0x90, 72, 110], now=0.0)
+    v3 = m3.route([0x90, 74, 120], now=0.2)[0][1][2]
+    v2 = m2.route([0x90, 74, 120], now=0.2)[0][1][2]
+    assert v3 > v2                       # +10 in forte: v2 treats it as noise (6.5), v3 keeps more
+    assert v3 == round(110 + 10 - 0.35 * 2 * 2.6)
+
+
+def test_moje3_keeps_mezzo_accents_like_v2():
+    m3 = _moje3()
+    m3.route([0x90, 72, 60], now=0.0)
+    assert m3.route([0x90, 74, 100], now=0.2)[0][1][2] == round(60 + 40 - 0.35 * 12)
+
+
+def test_moje3_hands_have_their_own_level():
+    m3 = _moje3()
+    m3.route([0x90, 40, 70], now=0.0)            # left hand, soft
+    m3.route([0x90, 76, 95], now=0.01)           # right hand melody
+    m3.route([0x90, 43, 70], now=0.3)
+    melody = m3.route([0x90, 77, 95], now=0.31)[0][1][2]
+    assert melody == 95                           # not pulled toward the left hand
+
+
+def test_moje3_map_has_no_ceiling_and_is_monotone():
+    import json
+    d = json.loads((Path(__file__).parent / "velocity-map.moje3.json").read_text(encoding="utf-8"))
+    w = d["white"]
+    assert all(x <= y for x, y in zip(w[1:], w[2:])) and all(w[i] >= i for i in range(110, 128)) and w[1] == 9 and d["black"][1] == 14

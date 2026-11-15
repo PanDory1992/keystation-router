@@ -81,7 +81,15 @@ TOUCH_CYCLE_BUTTON = 9
 FREE_BUTTONS = (10, 11)
 # 15.11: "moje" = a curve fitted to Miki's own playing (contrast-limited equalisation of his raw velocities,
 # slope <= 2.5) plus contextual denoising and censored-1 handling (v2, below). Study: symulacja-krzywej-20261115.
-TOUCH_MODES = ("light", "acoustic", "heavy", "moje")
+TOUCH_MODES = ("light", "acoustic", "heavy", "moje", "moje3")
+# 15.11: "moje3" (Moje v3e) = Moje v2 + three changes, simulated in symulacja-krzywej-20261115/RAPORT-moje3.md:
+#  - the denoise threshold is min(12, 2 * sigma(level)): in forte the hand repeats within +-2..4 raw, so a change of
+#    6+ raw there is meant and passes (v2 shrank every change up to 12); in mezzo it stays 12 so accents keep their size;
+#  - one phrase level per hand (two trackers per channel; a note joins the tracker whose last pitch is nearer, else
+#    the one within an octave, else below / above middle C), so the melody is not pulled toward the accompaniment;
+#  - its map has no flat ceiling above raw 110 (velocity-map.moje3.json).
+V3_SIGMA_KNOTS = ((2, 15.0), (40, 18.0), (60, 20.0), (75, 12.0), (85, 5.0), (95, 4.4), (105, 3.2), (115, 2.5), (127, 2.0))
+V3_SPLIT = 60
 DENOISE_K = 0.35         # pull toward the phrase level (35%) ...
 DENOISE_TAU = 12.0       # ... only for deviations within the sensor noise (~2 sigma); accents pass
 DENOISE_ALPHA = 0.3      # phrase level: running average of raw velocities
@@ -104,7 +112,7 @@ MONITOR_NAME = "Keystation Monitor"   # copy of played notes (after mapping) for
 # CC23 "1" mode (0 ppp, 1 context), CC24 keyboard connected (0/1).
 # Pedal CC64/66/67 sent to the play port are mirrored to the monitor port too.
 STATE_CHANNEL = 15
-TOUCH_CODE = {"light": 0, "acoustic": 1, "heavy": 2, "moje": 3}
+TOUCH_CODE = {"light": 0, "acoustic": 1, "heavy": 2, "moje": 3, "moje3": 4}
 RESTART_FILE = ROOT / "restart-router"   # create it: router exits cleanly, supervisor restarts it
 
 
@@ -140,6 +148,16 @@ CMD_POLL_S = 0.04
 # this PC (127.0.0.1:47800, protocol in udp_bus.py). File "szyna-off" turns it off.
 BUS_OFF_FILE = ROOT / "szyna-off"
 BLACK_KEYS = {1, 3, 6, 8, 10}
+
+
+def _interp(x: float, knots) -> float:
+    """Piecewise-linear lookup in ((x, y), ...), clamped at both ends (like numpy.interp)."""
+    if x <= knots[0][0]:
+        return knots[0][1]
+    for (x0, y0), (x1, y1) in zip(knots, knots[1:]):
+        if x <= x1:
+            return y0 + (y1 - y0) * (x - x0) / (x1 - x0)
+    return knots[-1][1]
 
 
 def load_velocity_map(path=VELMAP_FILE):
@@ -254,7 +272,10 @@ class PedalMapper:
         self.ones_context = True
         self.raw_level = [None] * 16      # "moje": running raw level per channel (denoising)
         self.raw_time = [0.0] * 16
-        self.raw_recent = [[] for _ in range(16)]   # "moje": (time, raw) of measured notes in the last ONE_CHORD_WINDOW
+        self.raw_recent = [[] for _ in range(16)]
+        self.hand_level = [[None, None] for _ in range(16)]   # "moje3": per channel, per hand: level, time, last pitch
+        self.hand_time = [[None, None] for _ in range(16)]
+        self.hand_pitch = [[0, 0] for _ in range(16)]   # "moje": (time, raw) of measured notes in the last ONE_CHORD_WINDOW
         self.phrase_level = [None] * 16   # running output level per channel
         self.phrase_time = [0.0] * 16
         self.pedal_out = [0] * 16         # what was last sent for the pedal (half pedal: depth)
@@ -370,6 +391,27 @@ class PedalMapper:
                 return int(round(ONE_CHORD_P * white_t[int(round(m))] + (1 - ONE_CHORD_P) * black_t[1]))
         return black_t[1]
 
+    def denoise3(self, channel: int, note: int, raw: int, now: float, lo: int = 2) -> int:
+        """Moje v3e: denoise with a per-level threshold and a level per hand (see V3_SIGMA_KNOTS)."""
+        times, pitches = self.hand_time[channel], self.hand_pitch[channel]
+        active = [h for h in (0, 1) if times[h] is not None and now - times[h] <= DENOISE_GAP]
+        if len(active) == 2:
+            hand = min(active, key=lambda h: abs(note - pitches[h]))
+        elif len(active) == 1 and abs(note - pitches[active[0]]) <= 12:
+            hand = active[0]
+        else:
+            hand = 0 if note < V3_SPLIT else 1
+        fresh = times[hand] is None or now - times[hand] > DENOISE_GAP
+        level = float(raw) if fresh else self.hand_level[channel][hand]
+        sigma = _interp(level, V3_SIGMA_KNOTS)
+        tau = min(DENOISE_TAU, 2 * sigma)
+        d = raw - level
+        d = d * (1 - DENOISE_K) if abs(d) <= tau else d - (DENOISE_K * tau if d > 0 else -DENOISE_K * tau)
+        self.hand_level[channel][hand] = float(raw) if fresh else (1 - DENOISE_ALPHA) * level + DENOISE_ALPHA * raw
+        times[hand] = now
+        pitches[hand] = note
+        return max(lo, min(127, int(round(level + d))))
+
     def remember_raw(self, channel: int, raw: int, now: float):
         recent = [(t0, r) for t0, r in self.raw_recent[channel] if now - t0 <= ONE_CHORD_WINDOW]
         recent.append((now, raw))
@@ -464,7 +506,7 @@ class PedalMapper:
                 if self.velocity_map is not None:
                     black = data[1] % 12 in BLACK_KEYS
                     table = self.velocity_map[1 if black else 0]
-                    moje = self.touch_mode == "moje"
+                    moje = self.touch_mode in ("moje", "moje3")
                     if data[2] == 1 and moje:
                         out = self.moje_one(channel, black, now)
                     elif data[2] == 1 and self.ones_context:
@@ -473,7 +515,10 @@ class PedalMapper:
                         raw = data[2]
                         if moje and raw > 1:
                             lo = BLACK_MEASURED_MIN if black and raw >= BLACK_MEASURED_MIN else 2
-                            raw = self.denoise(channel, raw, now, lo)
+                            if self.touch_mode == "moje3":
+                                raw = self.denoise3(channel, data[1], raw, now, lo)
+                            else:
+                                raw = self.denoise(channel, raw, now, lo)
                             self.remember_raw(channel, data[2], now)
                         out = table[raw]
                         self.note_played(channel, out, now)
