@@ -263,6 +263,36 @@ KNOB_CC = dict(zip((42, 34, 44, 45, 77, 78, 79, 94, 16, 17, 18, 19, 80, 81),
 CHANNEL_PRESSURE_KNOB_CC = 118  # physical B32
 RPN_KNOB_CC = 119               # physical B33 (RPN 0, Data Entry)
 
+# 15.11: the plugin's photo view shows where every knob and fader is. Physical CC -> label as printed on the
+# keyboard (B10..B33 knobs, C1..C9 faders); B32 sends channel pressure, B33 sends RPN data entry (CC6).
+CONTROL_LABELS = {
+    **{cc: f"B{10 + i}" for i, cc in enumerate((10, 2, 12, 13, 75, 76, 92))},
+    HALF_PEDAL_KNOB_CC: "B17",
+    **{cc: f"B{18 + i}" for i, cc in enumerate((42, 34, 44, 45, 77, 78, 79, 94, 16, 17, 18, 19, 80, 81))},
+    6: "B33",
+    **{cc: f"C{1 + i}" for i, cc in enumerate(FADER_CC)},
+    RAW_MAIN_FADER_CC: "C9",
+}
+
+
+def control_of(message) -> tuple[str, int] | None:
+    """(label, value) for a knob or fader message from the keyboard, else None."""
+    if len(message) >= 3 and message[0] & 0xF0 == 0xB0 and message[1] in CONTROL_LABELS:
+        return CONTROL_LABELS[message[1]], int(message[2])
+    if len(message) >= 2 and message[0] & 0xF0 == 0xD0:
+        return "B32", int(message[1])
+    return None
+
+
+def button_label(program: int) -> str | None:
+    """Program Change from the P10 buttons: 0..7 = B44..B51, 8..16 = C52..C60."""
+    if 0 <= program <= 7:
+        return f"B{44 + program}"
+    if 8 <= program <= 16:
+        return f"C{44 + program}"
+    return None
+
+
 PLAY, CONTROL = "play", "control"
 # Controller numbers an instrument is meant to receive from a keyboard.
 PLAY_CC = ({1, 11, 64, 66, 67} | set(PAN_KNOB_CC.values()) | set(range(104, 120))
@@ -774,6 +804,8 @@ def run():
 
     live_event = threading.Event()
     live_last = {}
+    live_controls = {}      # 15.11: "B10".."B33", "C1".."C9" -> last value (photo view of the plugin)
+    live_button = {}        # 15.11: last P10 button pressed: {"label": "C53", "t": unix time}
     bus_ref = [None]
 
     def live_snapshot():
@@ -792,6 +824,8 @@ def run():
             "touch": mapper.touch_mode,
             "ones": "context" if mapper.ones_context else "ppp",
             "last": dict(live_last) or None,
+            "controls": dict(live_controls),
+            "button": dict(live_button) or None,
             "updated": time.time(),
         }
 
@@ -1025,6 +1059,11 @@ def run():
                 logging.warning("LATE MIDI from driver: %.0f ms apart on the keyboard, arrived %.1f ms apart", _delta * 1000, (now - late["wall"]) * 1000)
             late["wall"] = now
             capture(message, routed, _delta)
+            control = control_of(message)
+            if control is not None:
+                live_controls[control[0]] = control[1]
+            if len(message) >= 2 and message[0] & 0xF0 == 0xC0 and button_label(message[1]):
+                live_button.update(label=button_label(message[1]), t=now)
             if mapper.last_event is None:          # a waiting note-off is published when it is sent
                 publish_bus(message, routed)
             if mapper.last_event is None and len(message) >= 3 and message[0] & 0xF0 == 0x90 and message[2] > 0:

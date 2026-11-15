@@ -521,3 +521,26 @@ def test_sysex_probes_are_read_only_requests():
     for msg in SYSEX_PROBES.values():
         assert msg[0] == 0xF0 and msg[-1] == 0xF7 and all(b < 0x80 for b in msg[1:-1])
     assert SYSEX_PROBES["identity"] == bytes.fromhex("F07E7F0601F7")
+
+
+# --- 15.11: photo view of the plugin -------------------------------------------------------
+from pedal_router import button_label, control_of  # noqa: E402
+
+
+def test_control_labels_cover_every_knob_and_fader():
+    assert control_of([0xB0, 10, 64]) == ("B10", 64)
+    assert control_of([0xB0, 95, 80]) == ("B17", 80)
+    assert control_of([0xB0, 42, 1]) == ("B18", 1)
+    assert control_of([0xB0, 81, 127]) == ("B31", 127)
+    assert control_of([0xD0, 33]) == ("B32", 33)
+    assert control_of([0xB0, 6, 99]) == ("B33", 99)
+    assert control_of([0xB0, 73, 100]) == ("C1", 100)
+    assert control_of([0xB0, 7, 127]) == ("C9", 127)
+    assert control_of([0xB0, 64, 127]) is None and control_of([0x90, 60, 100]) is None
+    labels = {control_of([0xB0, cc, 0])[0] for cc in range(128) if control_of([0xB0, cc, 0])} | {"B32"}
+    assert labels == {f"B{i}" for i in range(10, 34)} | {f"C{i}" for i in range(1, 10)}
+
+
+def test_button_labels():
+    assert [button_label(p) for p in (0, 2, 4, 7, 8, 9, 16)] == ["B44", "B46", "B48", "B51", "C52", "C53", "C60"]
+    assert button_label(17) is None
