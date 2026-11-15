@@ -584,9 +584,11 @@ fn screen(p: &egui::Painter, m: &Map, s: &LiveState, velo: &Velo, curves: &Curve
             }
             let black = matches!(h.note % 12, 1 | 3 | 6 | 8 | 10);
             let col = if black { ACCENT } else { INK };
+            // the column ends on the curve of its key colour, never above it
+            let curve = if black { &curves.black } else { &curves.white };
+            let top = curve.get(h.raw as usize).copied().unwrap_or(h.vel);
             let x = x_of(h.raw as f32);
-            p.rect_filled(m.r(x - cw / 2.0, y_of(h.vel as f32), x + cw / 2.0, py1), CornerRadius::ZERO, col.gamma_multiply(0.82 * a));
-            p.line_segment([m.p(x - cw, y_of(h.vel as f32)), m.p(x + cw, y_of(h.vel as f32))], Stroke::new(m.w(2.0), col.gamma_multiply(a)));
+            p.rect_filled(m.r(x - cw / 2.0, y_of(top as f32), x + cw / 2.0, py1), CornerRadius::ZERO, col.gamma_multiply(0.82 * a));
             if last.map_or(true, |l| h.t_on >= l.t_on) {
                 last = Some(h);
             }
