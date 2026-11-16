@@ -121,3 +121,17 @@ Bez wygładzania (powtórzenia ±0,3-0,4 dB). RMS ataku, dB.
 - Skoki: v19 (+4-5 dB) i v127 (+2 dB wobec v126).
 - Zakres v3-127 ok. 39-44 dB, poziom v127 ok. -13 do -18 dB (głośny, jak Pianoteq).
 - Wniosek do schodków: przy równych krokach w dB ok. 2/3 wartości wysyłanych przez router wypadnie poniżej v40. Bez schodków ta strefa (0,5 dB na krok) wzmacnia każdą niepewność ręki; schodki ją od ręki odcinają, więc tu dają najwięcej. Świadoma "jedynka" (v1) jest na Ravenscrofcie prawie niesłyszalna: w schodkach trzeba jej dać co najmniej v3.
+
+## UVI C7 Grand, C2 i C4
+Bez wygładzania (powtórzenia ±0,2-0,3 dB). RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| UVI C7 C2 | -37.4 | -37.1 | -30.1 | -22.7 | -16.6 | -12.0 | 0.3 | 14.3 | 6.1 | 4.6 | 25.4 |
+| UVI C7 C4 | -38.5 | -39.2 | -29.4 | -22.2 | -18.0 | -13.8 | -0.6 | 17.0 | 4.2 | 4.2 | 24.8 |
+
+- Najwęższy zakres ze wszystkich: v1-127 ok. 31-33 dB, v5-124 ok. 25 dB. Najcichsze v1 jest już dość głośne (ok. 31 dB pod v127, tyle co v17 w Pianotequ).
+- Dół v1-12 prawie płaski (ok. 3-5 dB, z małym dołkiem przy v7 w C2 i v9 w C4). Od v10 gładko: ok. 0,35 dB na krok do v40, potem coraz łagodniej (ok. 0,13 dB na krok powyżej v90).
+- Od v10 w górę prawie bez odwróceń (tylko v36 i v66 w C4, po ok. 1,5 dB). Bardzo powtarzalny.
+- Poziom v127 ok. -12 do -13 dB: najgłośniejszy ze zmierzonych.
+- Poprawka do wcześniejszego wniosku: nie wszystkie instrumenty z próbek mają szwy; UVI C7 od v10 jest prawie tak czysty jak Pianoteq.
