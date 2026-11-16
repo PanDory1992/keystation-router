@@ -40,6 +40,7 @@ import re
 import json
 import logging
 import os
+import random
 from pathlib import Path
 import signal
 import sys
@@ -82,7 +83,7 @@ TOUCH_CYCLE_BUTTON = 9
 FREE_BUTTONS = (10, 11)
 # 15.11: "moje" = a curve fitted to Miki's own playing (contrast-limited equalisation of his raw velocities,
 # slope <= 2.5) plus contextual denoising and censored-1 handling (v2, below). Study: symulacja-krzywej-20261115.
-TOUCH_MODES = ("light", "acoustic", "heavy", "moje", "moje3", "naturalna", "szeroka")
+TOUCH_MODES = ("light", "acoustic", "heavy", "moje", "moje3", "naturalna", "szeroka", "naturalna-los")
 # 16.11 (Miki: "two curves, natural, wide, never think about it again"): C53 now steps only naturalna <-> szeroka.
 # Both: loudness follows the log of key speed. The sensor counts the time between the two dome contacts, raw = K - t/tau
 # (K = 131.7, fitted to the hand's noise at fixed intent: sigma(raw) = 12% of (K - raw) above raw 85), so
@@ -91,9 +92,13 @@ TOUCH_MODES = ("light", "acoustic", "heavy", "moje", "moje3", "naturalna", "szer
 # measured black. Input stage exactly as moje3 (denoise per level and hand, censored 1s). Older modes stay selectable
 # from the plugin / panel; if no cycle map exists, the button steps through all of them as before.
 # Study: symulacja-krzywej-20261115/RAPORT-naturalna.md
-TOUCH_CYCLE = ("naturalna", "szeroka")
-DENOISE3_MODES = ("moje3", "naturalna", "szeroka")          # per-level threshold + a phrase level per hand
-CENSORED_ONE_MODES = ("moje", "moje3", "naturalna", "szeroka")   # "1" = soft note in the hole, not the phrase rule
+TOUCH_CYCLE = ("naturalna", "szeroka", "naturalna-los")
+DENOISE3_MODES = ("moje3", "naturalna", "szeroka", "naturalna-los")          # per-level threshold + a phrase level per hand
+CENSORED_ONE_MODES = ("moje", "moje3", "naturalna", "szeroka", "naturalna-los")   # "1" = soft note in the hole, not the phrase rule
+# 16.11 (Miki): "naturalna-los" = naturalna (same map file content) with a little variety in the 1s: a white 1 is drawn
+# from 8..10 and a lone black 1 from 10..14, uniformly, so on average they stay at the naturalna values (9 and 12).
+# A black 1 right after a loud chord keeps the chord rule (it is a read error, not a soft note). About +-0.5 dB.
+RANDOM_ONES = {"naturalna-los": ((8, 10), (10, 14))}   # mode -> ((white lo, hi), (black lo, hi)), inclusive
 # 15.11: "moje3" (Moje v3e) = Moje v2 + three changes, simulated in symulacja-krzywej-20261115/RAPORT-moje3.md:
 #  - the denoise threshold is min(12, 2 * sigma(level)): in forte the hand repeats within +-2..4 raw, so a change of
 #    6+ raw there is meant and passes (v2 shrank every change up to 12); in mezzo it stays 12 so accents keep their size;
@@ -124,7 +129,7 @@ MONITOR_NAME = "Keystation Monitor"   # copy of played notes (after mapping) for
 # CC23 "1" mode (0 ppp, 1 context), CC24 keyboard connected (0/1).
 # Pedal CC64/66/67 sent to the play port are mirrored to the monitor port too.
 STATE_CHANNEL = 15
-TOUCH_CODE = {"light": 0, "acoustic": 1, "heavy": 2, "moje": 3, "moje3": 4, "naturalna": 5, "szeroka": 6}
+TOUCH_CODE = {"light": 0, "acoustic": 1, "heavy": 2, "moje": 3, "moje3": 4, "naturalna": 5, "szeroka": 6, "naturalna-los": 7}
 RESTART_FILE = ROOT / "restart-router"   # create it: router exits cleanly, supervisor restarts it
 
 
@@ -353,6 +358,7 @@ class PedalMapper:
         self.touch_mode = None
         self.touch_dirty = False          # button changed the mode -> main loop saves it
         self.ones_context = True
+        self.rng = random.Random()        # "naturalna-los": the random 1s
         self.raw_level = [None] * 16      # "moje": running raw level per channel (denoising)
         self.raw_time = [0.0] * 16
         self.raw_recent = [[] for _ in range(16)]
@@ -463,17 +469,19 @@ class PedalMapper:
         return max(lo, min(127, int(round(level + d))))
 
     def moje_one(self, channel: int, black: bool, now: float) -> int:
-        """Raw 1 in "moje": censored, not silent. See ONE_CHORD_* above."""
+        """Raw 1 in "moje": censored, not silent. See ONE_CHORD_* above. In a RANDOM_ONES mode a lone 1 is drawn
+        from that mode's range instead of the map's fixed value (the chord rule stays as it is)."""
         white_t, black_t = self.velocity_map
+        spread = RANDOM_ONES.get(self.touch_mode)
         if not black:
-            return white_t[1]
+            return self.rng.randint(*spread[0]) if spread else white_t[1]
         mates = sorted(r for t0, r in self.raw_recent[channel] if now - t0 <= ONE_CHORD_WINDOW)
         if mates:
             k = len(mates) // 2
             m = mates[k] if len(mates) % 2 else (mates[k - 1] + mates[k]) / 2
             if m >= ONE_CHORD_LOUD:
                 return int(round(ONE_CHORD_P * white_t[int(round(m))] + (1 - ONE_CHORD_P) * black_t[1]))
-        return black_t[1]
+        return self.rng.randint(*spread[1]) if spread else black_t[1]
 
     def denoise3(self, channel: int, note: int, raw: int, now: float, lo: int = 2) -> int:
         """Moje v3e: denoise with a per-level threshold and a level per hand (see V3_SIGMA_KNOTS)."""

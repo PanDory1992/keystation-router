@@ -108,3 +108,23 @@ Moje 3 (wyrównanie histogramu Twojej gry) wyszło prawie dokładnie tą samą k
   - `mc2.py`: Monte Carlo;
   - `perkey2.py`: klawisze;
   - `router_check.py`: zgodność z routerem.
+
+## 9. Dodatek: Naturalna los. (16.11, na prośbę Mikiego)
+
+Czucie `naturalna-los` ma tę samą krzywą i to samo wejście co Naturalna. Różni się tylko jedynkami: zamiast stałej wartości router losuje ją z wąskiego zakresu.
+
+- **Biała „1”:** losowo 8-10, średnio 9.
+- **Samotna czarna „1”:** losowo 10-14, średnio 12.
+- **Czarna „1” po głośnym akordzie:** bez zmian, działa reguła akordu (to błąd odczytu, nie cicha nuta).
+
+Średnie są takie same jak w Naturalnej, a zmienność wynosi ok. ±0,5 dB.
+
+Sprawdzone na 93 310 nutach:
+- różnią się wyłącznie jedynki (1935 nut);
+- średnie: białe 9,02, czarne 12,00.
+
+C53 przełącza teraz: Naturalna -> Szeroka -> Naturalna los. -> Naturalna.
+
+Wtyczka Keystation Status 0.9.0 pokazuje nazwę NATURALNA LOS, a przy „1” napis LOSOWO.
+
+Opinia z analizy: różnica jest prawie niesłyszalna, a to kwestia gustu, nie poprawności. Domyślna zostaje Naturalna.

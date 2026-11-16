@@ -567,6 +567,35 @@ def test_naturalna_follows_log_key_speed():
     assert 70 <= w[100] <= 90 and 100 <= w[110] <= 120 and 15 <= w[41] <= 25
 
 
+def test_naturalna_los_draws_the_ones_and_keeps_everything_else():
+    import json
+    d = json.loads((Path(__file__).parent / "velocity-map.naturalna-los.json").read_text(encoding="utf-8"))
+    n = json.loads((Path(__file__).parent / "velocity-map.naturalna.json").read_text(encoding="utf-8"))
+    assert d["white"] == n["white"] and d["black"] == n["black"]
+    m = PedalMapper(); m.touch_maps = {"naturalna-los": (d["white"], d["black"])}; m.select_touch("naturalna-los")
+    m.rng.seed(1)
+    whites = [m.route([0x90, 60, 1], now=10.0 * i)[0][1][2] for i in range(300)]
+    blacks = [m.route([0x90, 61, 1], now=10.0 * i + 5)[0][1][2] for i in range(300)]
+    assert set(whites) == {8, 9, 10} and set(blacks) == {10, 11, 12, 13, 14}
+    assert abs(sum(whites) / 300 - 9) < 0.3 and abs(sum(blacks) / 300 - 12) < 0.4
+    m.route([0x90, 72, 100], now=9000.0); m.route([0x90, 76, 100], now=9000.005)
+    assert m.route([0x90, 78, 1], now=9000.01)[0][1][2] == round(0.6 * d["white"][100] + 0.4 * d["black"][1])
+    # measured notes: exactly as naturalna
+    a = PedalMapper(); a.touch_maps = {"naturalna": (n["white"], n["black"])}; a.select_touch("naturalna")
+    b = PedalMapper(); b.touch_maps = {"naturalna-los": (d["white"], d["black"])}; b.select_touch("naturalna-los")
+    for t, note, v in ((0.0, 40, 70), (0.01, 76, 95), (0.3, 43, 72), (0.31, 77, 101), (0.6, 79, 112), (0.8, 61, 45)):
+        assert a.route([0x90, note, v], now=t) == b.route([0x90, note, v], now=t)
+
+
+def test_button_cycles_three_when_naturalna_los_exists():
+    m = _nat("szeroka")
+    m.touch_maps["naturalna-los"] = m.touch_maps["naturalna"]
+    seen = []
+    for _ in range(4):
+        m.route([0xC0, 9]); seen.append(m.touch_mode)
+    assert seen == ["naturalna-los", "naturalna", "szeroka", "naturalna-los"]
+
+
 # --- 15.11: SysEx backup ------------------------------------------------------------------
 from pedal_router import SYSEX_PROBES, SysexLog  # noqa: E402
 

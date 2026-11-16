@@ -47,8 +47,8 @@ const FADER_ASSIGNABLE: [&str; 7] = ["C2", "C3", "C4", "C5", "C6", "C7", "C8"];
 const LEFT_HAND: Color32 = Color32::from_rgb(206, 74, 46); // vermilion
 /// indigo: green already means "black key" on the velocity screen
 const RIGHT_HAND: Color32 = Color32::from_rgb(40, 86, 168);
-/// 0.9.0: the router's C53 steps only between the two curves of 16.11; older ones stay in the panel.
-const TOUCH_ORDER: [&str; 2] = ["naturalna", "szeroka"];
+/// 0.9.0: the router's C53 steps only between the curves of 16.11; older ones stay in the panel.
+const TOUCH_ORDER: [&str; 3] = ["naturalna", "szeroka", "naturalna-los"];
 const RELEASE_ORDER: [u16; 3] = [60, 120, 250];
 
 /// What the plugin remembers with the project.
@@ -250,6 +250,7 @@ pub fn touch_name(t: Option<&str>) -> &'static str {
         Some("moje3") => "MOJE 3",
         Some("naturalna") => "NATURALNA",
         Some("szeroka") => "SZEROKA",
+        Some("naturalna-los") => "NATURALNA LOS",
         _ => "?",
     }
 }
@@ -260,6 +261,7 @@ fn touch_short(t: Option<&str>) -> &'static str {
         Some("moje3") => "MOJE3",
         Some("naturalna") => "NATUR",
         Some("szeroka") => "SZER",
+        Some("naturalna-los") => "N.LOS",
         other => touch_name(other),
     }
 }
@@ -601,8 +603,8 @@ fn lcd(ui: &mut egui::Ui, p: &egui::Painter, m: &Map, s: &LiveState, fresh: bool
         }
         return;
     }
-    let moje = matches!(s.touch.as_deref(), Some("moje") | Some("moje3") | Some("naturalna") | Some("szeroka"));
-    let ones = if moje { "W KRZYWEJ" } else if s.ones.as_deref() == Some("ppp") { "PPP" } else { "KONTEKST" };
+    let moje = matches!(s.touch.as_deref(), Some("moje") | Some("moje3") | Some("naturalna") | Some("szeroka") | Some("naturalna-los"));
+    let ones = if s.touch.as_deref() == Some("naturalna-los") { "LOSOWO" } else if moje { "W KRZYWEJ" } else if s.ones.as_deref() == Some("ppp") { "PPP" } else { "KONTEKST" };
     let rows: Vec<(&str, String, Option<Command>, &str)> = vec![
         ("PEDAŁ", match s.pedal_mode.as_deref() { Some("sostenuto") => "SOSTENUTO".into(), Some("sustain") => "SUSTAIN".into(), _ => "?".into() },
             Some(Command::PedalMode(if s.pedal_mode.as_deref() == Some("sostenuto") { "sustain" } else { "sostenuto" })),
@@ -610,7 +612,7 @@ fn lcd(ui: &mut egui::Ui, p: &egui::Painter, m: &Map, s: &LiveState, fresh: bool
         ("UNA CORDA", on_off(s.una_corda).into(), s.una_corda.map(|on| Command::UnaCorda(!on)), "Una corda (przycisk B48). Kliknij: włącz / wyłącz."),
         ("CZUCIE", touch_name(s.touch.as_deref()).into(), Some(Command::Touch(next_touch(s.touch.as_deref()))), "Krzywa dynamiki routera (przycisk C53). Kliknij: następna."),
         ("„1”", ones.into(), if moje { None } else { Some(Command::Ones(if s.ones.as_deref() == Some("ppp") { "context" } else { "ppp" })) },
-            "Co router robi z najcichszym dotykiem („1”). W czuciu Naturalna, Szeroka i Moje decyduje sama krzywa."),
+            "Co router robi z najcichszym dotykiem („1”). W czuciu Naturalna, Szeroka i Moje decyduje sama krzywa; w Naturalnej los. biała 8–10, czarna 10–14."),
         ("PÓŁPEDAŁ", format!("{}  {:.0}%", on_off(s.half_pedal), s.half_depth as f32 / 127.0 * 100.0), s.half_pedal.map(|on| Command::HalfPedal(!on)),
             "Półpedał: pedał wciska do głębokości z pokrętła B17. Kliknij: włącz / wyłącz."),
         ("PUSZCZANIE", s.release_ms.map(|r| format!("{r} MS")).unwrap_or_else(|| "?".into()), s.release_ms.map(|r| Command::ReleaseMs(next_release(Some(r)))),
@@ -818,7 +820,8 @@ mod tests {
     fn cycles_and_names() {
         assert_eq!(next_touch(Some("moje3")), "naturalna");
         assert_eq!(next_touch(Some("naturalna")), "szeroka");
-        assert_eq!(next_touch(Some("szeroka")), "naturalna");
+        assert_eq!(next_touch(Some("szeroka")), "naturalna-los");
+        assert_eq!(next_touch(Some("naturalna-los")), "naturalna");
         assert_eq!(touch_name(Some("szeroka")), "SZEROKA");
         assert_eq!(next_release(Some(250)), 60);
         assert_eq!(note_name(60), "C4");

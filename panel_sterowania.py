@@ -30,8 +30,8 @@ SERVICES = [  # (key, label, script name, trigger file)
     ("trener", "Serwer Trenera", "trener_serwer.py", "restart-trener"),
     ("nadzorca", "Nadzorca", "keystation_supervisor.py", "restart-nadzorca"),
 ]
-TOUCH = [("naturalna", "Naturalna"), ("szeroka", "Szeroka"), ("moje3", "Moje 3"), ("moje", "Moje"),
-         ("light", "Lekkie"), ("acoustic", "Akustyczne"), ("heavy", "Ciężkie")]   # 16.11: C53 = Naturalna <-> Szeroka
+TOUCH = [("naturalna", "Naturalna"), ("szeroka", "Szeroka"), ("naturalna-los", "Naturalna los."), ("moje3", "Moje 3"), ("moje", "Moje"),
+         ("light", "Lekkie"), ("acoustic", "Akustyczne"), ("heavy", "Ciężkie")]   # 16.11: C53 = Naturalna -> Szeroka -> Naturalna los.
 
 
 # --- pure helpers (tests: test_panel.py) ------------------------------------------------------------------
