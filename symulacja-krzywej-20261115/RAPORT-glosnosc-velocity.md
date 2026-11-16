@@ -501,3 +501,21 @@ Bez wygładzania (powtórzenia ±0,15-0,2 dB). RMS ataku, dB.
 - Sprawdzone na 9 instrumentach: v2-3 wychodzą o ok. 1,3-2,3 dB za cicho, v7 o ok. 0,7-1,2 dB, v25/v33 o ok. 0,3-0,6 dB, wszędzie podobnie.
 - Dlatego wcześniejsze uwagi typu "v2-3 ciszej niż v1 i v4" oraz "szew v4 +2 do 3 dB" (Walker, AIR C7, Hammers and Waves, Roland, Piano in Blue, Rosewood) to ten sam błąd testu, a nie wada instrumentu. Cisza na v1 w Rolandzie i chaos dołu w Ivy są prawdziwe (dużo większe niż 2 dB).
 - Pozostałe długości nut też się różnią (ok. 0,14-0,22 s), co daje dodatkowy szum ok. ±0,2-0,3 dB w każdym pomiarze.
+
+## Zmiana metody od 16.11 (od Berlin Concert Grand)
+- Wszystkie nuty w teście mają teraz tę samą długość 0,18 s (wcześniej 0,07-0,22 s). Dołki przy v2-3 i v7 znikają, szum spada o ok. 0,2-0,3 dB. Wyniki są porównywalne ze starszymi (średnia długość prawie ta sama).
+
+## Berlin Concert Grand, C2 i C4 (nowa metoda)
+Bez wygładzania (powtórzenia ±0,1-0,4 dB). RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Berlin C2 | -62.4 | -51.5 | -40.7 | -36.0 | -28.0 | -27.0 | 10.9 | 15.6 | 8.0 | 1.0 | 35.5 |
+| Berlin C4 | -59.1 | -55.4 | -45.4 | -38.8 | -32.7 | -22.9 | 3.7 | 16.7 | 6.1 | 9.8 | 36.2 |
+
+- C4 czysto: odchylenie od prostej ok. 1,0 dB, powtórzenia ±0,1 dB, jedno drobne odwrócenie (v72 -1,4 dB). Zakres v1-127 ok. 39 dB. Warstwy co ok. 12-15 velocity (v9, 20, 32, 45, 58, 72, 85, 100).
+- C2 ma dwie duże wady:
+  - v1-6 to jedna płaska warstwa, potem v7 skok +6,9 dB;
+  - warstwa v100-116 rośnie za mocno i v116 jest o ok. 5,6 dB głośniejsze niż v124, a v117 spada o -7,1 dB. W basie najgłośniej brzmi więc v116, a v117-127 jest o 5-7 dB ciszej (11 odwróceń).
+- Poziom v127 ok. -26 dB (C2) i -22 dB (C4).
+- Ogon po puszczeniu klawisza (0,07-0,27 s po zwolnieniu, z włączonym release resonance): ok. 21-25 dB pod atakiem i rośnie razem z velocity (tak samo jak w AIR i Rosewood). W samej głośności nie widać więc stałego poziomu "twangu"; jego jednolitość jest raczej w barwie. Do rozdzielenia: jeden pomiar z wyłączonym release resonance.
