@@ -32,7 +32,7 @@ def test_c54_then_a_fader_takes_the_selected_channel(tmp_path):
     mb = tmp_path / "mb"
     mb.mkdir()
     link = FaderLink(mailbox=mb, map_path=tmp_path / "map.json", doorbell=lambda: True)
-    (mb / "faders-out.json").write_text(json.dumps({"selected": "FX 1", "channels": ["FX 1", "Main"]}), encoding="utf-8")
+    (mb / "faders-out.json").write_text(json.dumps({"selected": "FX 1", "channels": ["FX 1", "Main"]}), encoding="utf-8-sig")  # as Studio One writes it
     link.arm(now=100.0)
     assert link.flush()                                  # rings so the bridge reports the selection
     assert link.move("C2", 64, now=105.0) == "FX 1"

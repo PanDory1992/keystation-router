@@ -144,7 +144,7 @@ class FaderLink:
     # ---- the bridge side -------------------------------------------------------------
     def out(self) -> dict:
         try:
-            data = json.loads((self.mailbox / "faders-out.json").read_text(encoding="utf-8"))
+            data = json.loads((self.mailbox / "faders-out.json").read_text(encoding="utf-8-sig"))  # Studio One writes a BOM
             return data if isinstance(data, dict) else {}
         except (OSError, ValueError):
             return {}
