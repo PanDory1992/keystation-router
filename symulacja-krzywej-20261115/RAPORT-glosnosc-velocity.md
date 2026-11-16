@@ -480,3 +480,24 @@ Bez wygładzania. RMS ataku, dB.
 - Poziom v127 ok. -33/-35 dB (cicho, jak Walker).
 - C2 i C4 różnią się na dole o kilkadziesiąt dB, od v34 podobnie.
 - Wniosek: do nauki dynamiki tylko zakres v34-127; "Schody" dla Ivy muszą zaczynać od ok. v34.
+
+## Rosewood Grand, ustawienia domyślne, C2 i C4
+Bez wygładzania (powtórzenia ±0,15-0,2 dB). RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Rosewood C2 | -47.0 | -45.2 | -40.0 | -30.8 | -23.1 | -16.1 | 1.8 | 14.5 | 7.7 | 7.0 | 30.9 |
+| Rosewood C4 | -46.1 | -44.5 | -38.0 | -30.1 | -22.9 | -15.7 | 1.6 | 14.5 | 7.1 | 7.3 | 30.5 |
+
+- Bardzo czysto: odchylenie od prostej ok. 0,67 dB, zero odwróceń, żadnych prawdziwych szwów.
+- Prawie prosta w dB: ok. 0,33 dB na krok na dole, 0,28-0,31 w środku, 0,20-0,21 na górze. Zakres v1-127 ok. 32-33 dB.
+- C2 i C4 prawie ten sam kształt (różnica średnio 0,6 dB, najwyżej 1,8 dB).
+- Barwa zmienia się warstwami (ok. v47, 58, 68, 79, 90, 100, 111), głośność przechodzi przez nie gładko.
+- Poziom v127 ok. -15,5 dB: najgłośniejszy instrument z mierzonych.
+- Kształtem najbliżej Piano in Blue (C2: odchylenie 0,5 dB, Rosewood średnio ok. 1,5 dB głośniej w środku względem v124). Należy do rodziny "prosta w dB" (Pianoteq, Piano in Blue, Ivory Upright).
+
+## Poprawka pomiaru: dołki przy v2-3 i v7 to błąd testu, nie instrumentów
+- W pliku testowym nuty v2 i v3 są o połowę krótsze (ok. 0,07 s zamiast ok. 0,15-0,2 s), v7 ok. 0,11 s, a v25 i v33 ok. 0,14 s. RMS liczymy z 0,3 s, więc krótsza nuta to wcześniejsze tłumienie i niższy wynik.
+- Sprawdzone na 9 instrumentach: v2-3 wychodzą o ok. 1,3-2,3 dB za cicho, v7 o ok. 0,7-1,2 dB, v25/v33 o ok. 0,3-0,6 dB, wszędzie podobnie.
+- Dlatego wcześniejsze uwagi typu "v2-3 ciszej niż v1 i v4" oraz "szew v4 +2 do 3 dB" (Walker, AIR C7, Hammers and Waves, Roland, Piano in Blue, Rosewood) to ten sam błąd testu, a nie wada instrumentu. Cisza na v1 w Rolandzie i chaos dołu w Ivy są prawdziwe (dużo większe niż 2 dB).
+- Pozostałe długości nut też się różnią (ok. 0,14-0,22 s), co daje dodatkowy szum ok. ±0,2-0,3 dB w każdym pomiarze.
