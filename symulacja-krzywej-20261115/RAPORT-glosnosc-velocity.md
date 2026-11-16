@@ -135,3 +135,17 @@ Bez wygładzania (powtórzenia ±0,2-0,3 dB). RMS ataku, dB.
 - Od v10 w górę prawie bez odwróceń (tylko v36 i v66 w C4, po ok. 1,5 dB). Bardzo powtarzalny.
 - Poziom v127 ok. -12 do -13 dB: najgłośniejszy ze zmierzonych.
 - Poprawka do wcześniejszego wniosku: nie wszystkie instrumenty z próbek mają szwy; UVI C7 od v10 jest prawie tak czysty jak Pianoteq.
+
+## VI Labs Modern U (pianino), C2 i C4
+Bez wygładzania (powtórzenia ±0,2 dB). RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Modern U C2 | -59.8 | -52.8 | -41.7 | -34.2 | -27.9 | -19.7 | 7.0 | 18.6 | 6.3 | 8.2 | 40.1 |
+| Modern U C4 | -66.5 | -55.0 | -41.2 | -32.8 | -26.4 | -18.6 | 11.5 | 22.2 | 6.4 | 7.8 | 47.9 |
+
+- Najszerszy zakres ze wszystkich: v1-127 ok. 47 dB w C2 i 55 dB w C4.
+- Od v10 w górę bez żadnego odwrócenia i bez płaskiej góry: ok. 0,5 dB na krok do v40, potem równo ok. 0,21-0,25 dB na krok aż do v127.
+- Dół stromy, ale ciągły (bez warstw): v3-10 to 12-17 dB, czyli ok. 2 dB na każdą wartość velocity.
+- Poziom v127 ok. -18 do -20 dB.
+- Wniosek: najczystszy i najszerszy instrument z pomiarów. Mieści 12-13 schodków po 4 dB; dobry wzorzec do testu celowania.
