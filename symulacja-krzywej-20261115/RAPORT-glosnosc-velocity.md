@@ -519,3 +519,19 @@ Bez wygładzania (powtórzenia ±0,1-0,4 dB). RMS ataku, dB.
   - warstwa v100-116 rośnie za mocno i v116 jest o ok. 5,6 dB głośniejsze niż v124, a v117 spada o -7,1 dB. W basie najgłośniej brzmi więc v116, a v117-127 jest o 5-7 dB ciszej (11 odwróceń).
 - Poziom v127 ok. -26 dB (C2) i -22 dB (C4).
 - Ogon po puszczeniu klawisza (0,07-0,27 s po zwolnieniu, z włączonym release resonance): ok. 21-25 dB pod atakiem i rośnie razem z velocity (tak samo jak w AIR i Rosewood). W samej głośności nie widać więc stałego poziomu "twangu"; jego jednolitość jest raczej w barwie. Do rozdzielenia: jeden pomiar z wyłączonym release resonance.
+
+## Production Voices Estate Grand Piano 1b, C2 i C4 (nowa metoda)
+Ustawienia ze zrzutu: Key Response ON (Strength ok. połowa, przełącznik krzywej Exponential/Sinusoidal), Velocity Smoothing i Authentic Pedalling włączone. RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Estate C2 | -56.2 | -53.2 | -43.8 | -34.2 | -26.9 | -20.8 | 3.0 | 19.0 | 7.3 | 6.1 | 35.3 |
+| Estate C4 | -57.5 | -54.7 | -45.4 | -35.2 | -28.4 | -22.1 | 2.9 | 19.5 | 6.8 | 6.3 | 35.5 |
+
+- Najczystszy instrument ze wszystkich pomiarów: powtórzenia ±0,04-0,06 dB, zero skoków powyżej 1,4 dB, zero odwróceń. Jedyna nierówność: v64 -0,7 dB (granica warstwy).
+- Gładka krzywa wklęsła: ok. 0,6 dB na krok na dole, 0,45 w v10-40, 0,26 w v40-80, 0,19 na górze. Zakres v1-127 ok. 38,5 dB.
+- C2 i C4 praktycznie identyczne (różnica najwyżej 0,58 dB, średnio 0,24 dB): jedna tabela na oba rejestry.
+- Barwa zmienia się płynnie (C4 ok. 640 -> 1570 Hz), wyraźniejsza zmiana warstwy tylko ok. v53-64.
+- Poziom v127 ok. -20 / -22 dB.
+- To nie ta sama krzywa co Kawai EX Pro (w środku Estate ok. 2-3 dB niżej względem v124, dół dużo niżej, i bez powtórzeń ±1,9 dB).
+- Do sprawdzenia: czy Velocity Smoothing wygładza tylko przejścia między warstwami, czy uśrednia velocity kolejnych nut. Test rosnącą rampą tego nie rozróżni.
