@@ -422,3 +422,17 @@ Bez wygładzania (powtórzenia ±0,2 dB). RMS ataku, dB.
 - C2 i C4 mają ten sam kształt (różnica najwyżej 1,2 dB, średnio 0,4 dB): jedna tabela na oba rejestry.
 - Poziom v127 ok. -22 dB.
 - Uwaga techniczna: po bounce C4 pierwsze "cofnij" w Studio One cofnęło inny krok (nie bounce), dopiero drugie usunęło bounce. Pomiar nie jest tym dotknięty (nagranie było już gotowe).
+
+## Galaxy Vintage D, ustawienie domyślne Basic Grand, C2 i C4
+Bez wygładzania (powtórzenia ±0,4 dB). RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Galaxy Vintage D C2 | -60.1 | -55.9 | -45.4 | -36.8 | -28.9 | -18.0 | 4.2 | 19.1 | 7.8 | 11.0 | 42.1 |
+| Galaxy Vintage D C4 | -69.9 | -64.1 | -49.2 | -39.2 | -31.3 | -23.0 | 5.7 | 25.0 | 7.8 | 8.4 | 46.9 |
+
+- Szeroki zakres: v1-127 ok. 50 dB (C2) i 56 dB (C4). Góra nie jest płaska (v90-124 ok. 8-11 dB, v120-127 rośnie ok. 0,7 dB na krok).
+- Kształt piły: w obrębie warstwy głośność rośnie mocno (ok. 0,4-0,7 dB na krok), a następna warstwa zaczyna ciszej niż kończy poprzednia. Spadki: C2 v43 -3,1, v104 -2,6, v120 -2,1 dB; C4 v43 -2,5, v57 -2,1, v80 -1,7, v96 -2,8, v104 -2,4, v120 -2,0 dB. Razem 15-17 odwróceń.
+- Warstwy (barwa): w górnej połowie co ok. 8 velocity (C2 ok. v57, 70, 80, 88, 96, 104, 112, 120, 127).
+- C2 i C4 różnią się kształtem (do ok. 5 dB), więc osobne tabele dla rejestrów.
+- Poziom v127 ok. -16 dB (C2) i -21 dB (C4): najgłośniej z mierzonych w basie.
