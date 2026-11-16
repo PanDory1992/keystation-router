@@ -50,6 +50,7 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "vendor"))
 import rtmidi  # noqa: E402
 from udp_bus import UdpBus  # noqa: E402  (06.11: live bus for plugins and trainers)
+from fader_assign import ASSIGN_PROGRAM, FaderLink  # noqa: E402  (16.11: C2..C8 on any channel)
 
 INPUT_NAME = "Keystation Pro 88"
 _INPUT_RE = re.compile(r"^(?:\d+-\s*)?" + re.escape(INPUT_NAME) + r"(?:\s+\d+)?$", re.IGNORECASE)
@@ -327,6 +328,7 @@ def destination(packet: bytes) -> str:
 
 class PedalMapper:
     def __init__(self):
+        self.fader_link = None      # 16.11: fader_assign.FaderLink; C2..C8 + C54 go there when set
         self.mode = "sustain"
         self.pedal_values = [0] * 16
         self.una_corda_values = [0] * 16
@@ -604,6 +606,8 @@ class PedalMapper:
                 self.next_touch()
                 return []
             if data[1] in FREE_BUTTONS:
+                if data[1] == ASSIGN_PROGRAM and self.fader_link is not None:
+                    self.fader_link.arm()
                 return []
             selected = PROGRAM_BUTTONS.get(data[1])
             if selected:
@@ -617,6 +621,9 @@ class PedalMapper:
                 return [bytes((status, KNOB_CC[cc], value))]
             if cc in PAN_KNOB_CC:
                 return [bytes((status, PAN_KNOB_CC[cc], value))]
+            if self.fader_link is not None and cc in FADER_CC[1:]:
+                self.fader_link.move(f"C{FADER_CC.index(cc) + 1}", value)
+                return []
             if cc in FADER_CC or cc == RAW_MAIN_FADER_CC:
                 return fader_messages(status, cc, value)
             # P10 B33 sends RPN 0 selector (CC100=0, CC101=0), then CC6 values.
@@ -735,6 +742,9 @@ def run():
         logging.exception("timeBeginPeriod failed")
     mapper = PedalMapper()
     mapper.load(load_options())
+    fader_link = FaderLink()
+    mapper.fader_link = fader_link
+    logging.info("Faders C2..C8: %s", fader_link.map)
     logging.info("Options: %s", mapper.options())
     done = threading.Event()
     midi_in = None
@@ -845,6 +855,7 @@ def run():
             "controls": dict(live_controls),
             "button": dict(live_button) or None,
             "reading": round(max(0.0, read_controls[0] - time.time()), 1),
+            "faders": fader_link.state(),
             "updated": time.time(),
         }
 
@@ -879,6 +890,7 @@ def run():
             time.sleep(LIVE_MIN_GAP_S)
 
     threading.Thread(target=live_writer, name="live-json", daemon=True).start()
+    threading.Thread(target=fader_link.run, args=(done,), name="faders", daemon=True).start()
 
     def send_probe(name):
         """Send one whitelisted SysEx probe to the keyboard's own MIDI input (its USB output port)."""
@@ -902,6 +914,12 @@ def run():
 
     def apply_command(want):
         """Same effect as pressing the physical buttons."""
+        fader = want.get("fader")
+        if isinstance(fader, dict):
+            for name, channel in fader.items():
+                if channel is None or isinstance(channel, str):
+                    fader_link.assign(str(name), channel or None)
+            logging.info("Faders C2..C8: %s", fader_link.map)
         if want.get("sysex_probe") in SYSEX_PROBES:
             send_probe(want["sysex_probe"])
         presses = []

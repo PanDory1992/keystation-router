@@ -278,56 +278,56 @@
    "id": "C1",
    "x": 954.0,
    "short": "Kanał 1",
-   "long": "Głośność kanału 1 w mikserze Studio One (od lewej). Do oporu w górę = dokładnie 0 dB.",
+   "long": "Głośność pierwszego kanału w mikserze Studio One (twoje pianino). Do oporu w górę = dokładnie 0 dB.",
    "group": "mikser"
   },
   {
    "id": "C2",
    "x": 1063.8,
    "short": "Kanał 2",
-   "long": "Głośność kanału 2 w mikserze Studio One (od lewej). Do oporu w górę = dokładnie 0 dB.",
+   "long": "Głośność wybranego kanału Studio One (nazwa nad suwakiem). Kliknij nazwę, żeby wybrać inny kanał, albo: zaznacz kanał w Studio One, C54, rusz suwakiem. Do oporu w górę = dokładnie 0 dB.",
    "group": "mikser"
   },
   {
    "id": "C3",
    "x": 1173.6,
    "short": "Kanał 3",
-   "long": "Głośność kanału 3 w mikserze Studio One (od lewej). Do oporu w górę = dokładnie 0 dB.",
+   "long": "Głośność wybranego kanału Studio One (nazwa nad suwakiem). Kliknij nazwę, żeby wybrać inny kanał, albo: zaznacz kanał w Studio One, C54, rusz suwakiem. Do oporu w górę = dokładnie 0 dB.",
    "group": "mikser"
   },
   {
    "id": "C4",
    "x": 1283.4,
    "short": "Kanał 4",
-   "long": "Głośność kanału 4 w mikserze Studio One (od lewej). Do oporu w górę = dokładnie 0 dB.",
+   "long": "Głośność wybranego kanału Studio One (nazwa nad suwakiem). Kliknij nazwę, żeby wybrać inny kanał, albo: zaznacz kanał w Studio One, C54, rusz suwakiem. Do oporu w górę = dokładnie 0 dB.",
    "group": "mikser"
   },
   {
    "id": "C5",
    "x": 1393.2,
    "short": "Kanał 5",
-   "long": "Głośność kanału 5 w mikserze Studio One (od lewej). Do oporu w górę = dokładnie 0 dB.",
+   "long": "Głośność wybranego kanału Studio One (nazwa nad suwakiem). Kliknij nazwę, żeby wybrać inny kanał, albo: zaznacz kanał w Studio One, C54, rusz suwakiem. Do oporu w górę = dokładnie 0 dB.",
    "group": "mikser"
   },
   {
    "id": "C6",
    "x": 1503.0,
    "short": "Kanał 6",
-   "long": "Głośność kanału 6 w mikserze Studio One (od lewej). Do oporu w górę = dokładnie 0 dB.",
+   "long": "Głośność wybranego kanału Studio One (nazwa nad suwakiem). Kliknij nazwę, żeby wybrać inny kanał, albo: zaznacz kanał w Studio One, C54, rusz suwakiem. Do oporu w górę = dokładnie 0 dB.",
    "group": "mikser"
   },
   {
    "id": "C7",
    "x": 1612.8,
    "short": "Kanał 7",
-   "long": "Głośność kanału 7 w mikserze Studio One (od lewej). Do oporu w górę = dokładnie 0 dB.",
+   "long": "Głośność wybranego kanału Studio One (nazwa nad suwakiem). Kliknij nazwę, żeby wybrać inny kanał, albo: zaznacz kanał w Studio One, C54, rusz suwakiem. Do oporu w górę = dokładnie 0 dB.",
    "group": "mikser"
   },
   {
    "id": "C8",
    "x": 1722.6,
    "short": "Kanał 8",
-   "long": "Głośność kanału 8 w mikserze Studio One (od lewej). Do oporu w górę = dokładnie 0 dB.",
+   "long": "Głośność wybranego kanału Studio One (nazwa nad suwakiem). Kliknij nazwę, żeby wybrać inny kanał, albo: zaznacz kanał w Studio One, C54, rusz suwakiem. Do oporu w górę = dokładnie 0 dB.",
    "group": "mikser"
   },
   {
@@ -423,8 +423,8 @@
    "id": "C54",
    "x": 1173.6,
    "y": 990,
-   "short": "wolny",
-   "long": "Wolny przycisk (router go połyka)",
+   "short": "Przypisz",
+   "long": "Przypisanie suwaka: zaznacz kanał w Studio One, wciśnij C54 i w ciągu 10 sekund rusz suwakiem C2–C8. Ten suwak będzie odtąd sterował tym kanałem.",
    "group": "wolny"
   },
   {

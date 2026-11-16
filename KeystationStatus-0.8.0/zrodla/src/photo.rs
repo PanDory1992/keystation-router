@@ -42,6 +42,8 @@ const EPAPER: Color32 = Color32::from_rgba_premultiplied(206, 209, 200, 236);
 const FLASH_S: f64 = 0.6;
 /// the small keyboard: notes below this are coloured as the left hand
 const SPLIT: u8 = 60;
+/// 16.11: faders the router assigns by channel name (C1 = first channel, C9 = Main stay on the surface)
+const FADER_ASSIGNABLE: [&str; 7] = ["C2", "C3", "C4", "C5", "C6", "C7", "C8"];
 const LEFT_HAND: Color32 = Color32::from_rgb(206, 74, 46); // vermilion
 /// indigo: green already means "black key" on the velocity screen
 const RIGHT_HAND: Color32 = Color32::from_rgb(40, 86, 168);
@@ -470,8 +472,45 @@ pub fn draw(ui: &mut egui::Ui, s: &LiveState, tex: &TextureHandle, velo: &Velo, 
 
     // --- faders ---
     let (top, bottom) = (lay.fader_top, lay.fader_bottom);
+    let assigning = fresh && s.faders.assigning > 0.0;
     for c in &lay.faders {
-        tag(&p, &m, c.x, top - 22.0, &c.short, false);
+        // 16.11: C2..C8 show the Studio One channel they drive; click the name to pick another one.
+        let assignable = FADER_ASSIGNABLE.contains(&c.id.as_str());
+        let name = if assignable { s.faders.map.get(&c.id).cloned() } else { None };
+        let label = if assignable { name.clone().unwrap_or_else(|| "—".into()) } else { c.short.clone() };
+        let size = if label.chars().count() > 9 { 13.0 } else { 17.0 };
+        let r = tag_sized(&p, &m, c.x, top - 22.0, &label, assigning && assignable, size);
+        if assignable && fresh {
+            let resp = ui
+                .interact(r.expand(4.0 * k), ui.id().with(("fader-name", c.id.as_str())), Sense::click())
+                .on_hover_text(format!(
+                    "{}: {}\nKliknij, żeby wybrać kanał.\nAlbo na klawiaturze: zaznacz kanał w Studio One, wciśnij C54 (PRZYPISZ) i rusz tym suwakiem.",
+                    c.id,
+                    name.as_deref().unwrap_or("nieprzypisany")
+                ));
+            if resp.hovered() {
+                brackets(&p, r.expand(3.0 * k), 6.0 * k, Stroke::new(m.w(1.6), ACCENT));
+            }
+            let popup = ui.id().with(("fader-menu", c.id.as_str()));
+            if resp.clicked() {
+                ui.memory_mut(|mem| mem.toggle_popup(popup));
+            }
+            egui::popup_below_widget(ui, popup, &resp, egui::PopupCloseBehavior::CloseOnClick, |ui| {
+                ui.set_min_width(170.0);
+                if s.faders.channels.is_empty() {
+                    ui.label("Studio One jeszcze nie podał listy kanałów:\nporusz dowolnym suwakiem C2–C8.");
+                }
+                for ch in &s.faders.channels {
+                    if ui.selectable_label(name.as_deref() == Some(ch.as_str()), ch).clicked() {
+                        command = Some(Command::Fader(c.id.clone(), Some(ch.clone())));
+                    }
+                }
+                ui.separator();
+                if ui.selectable_label(name.is_none(), "— nic —").clicked() {
+                    command = Some(Command::Fader(c.id.clone(), None));
+                }
+            });
+        }
         let value = s.controls.get(&c.id).copied();
         let shown = match value {
             Some(127) => "0dB".to_owned(),
@@ -508,6 +547,7 @@ pub fn draw(ui: &mut egui::Ui, s: &LiveState, tex: &TextureHandle, velo: &Velo, 
                 (on, Some(if on { "WŁ" } else { "wył" }.into()), s.una_corda.map(|on| Command::UnaCorda(!on)))
             }
             "C53" => (true, Some(touch_short(s.touch.as_deref()).into()), Some(Command::Touch(next_touch(s.touch.as_deref())))),
+            "C54" => (assigning, assigning.then(|| format!("{:.0}", s.faders.assigning.ceil())), None),
             _ => (false, None, None),
         };
         let rect = m.rc(c.x, c.y, bw, bh);

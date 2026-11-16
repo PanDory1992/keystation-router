@@ -552,3 +552,27 @@ def test_load_controls_keeps_only_valid_positions(tmp_path):
     f.write_text('{"B10": 64, "C9": 127, "B32": 5, "X1": 3, "B11": 300, "B12": "a"}', encoding="utf-8")
     assert load_controls(f) == {"B10": 64, "C9": 127, "B32": 5}
     assert load_controls(tmp_path / "missing.json") == {}
+
+
+def test_faders_c2_c8_and_c54_go_to_the_fader_link():
+    class Link:
+        def __init__(self):
+            self.moves, self.armed = [], 0
+
+        def move(self, fader, value):
+            self.moves.append((fader, value))
+
+        def arm(self):
+            self.armed += 1
+
+    m = PedalMapper()
+    m.fader_link = link = Link()
+    assert m.route([0xB0, 72, 100]) == []                       # C2: to the bridge, not the surface
+    assert m.route([0xB0, 84, 5]) == []                         # C8
+    assert link.moves == [("C2", 100), ("C8", 5)]
+    assert m.route([0xB0, 73, 100])[0][0] == CONTROL            # C1 stays on the surface
+    assert m.route([0xB0, 7, 64])[0][0] == CONTROL              # C9 (Main) too
+    assert m.route([0xC0, 10]) == [] and link.armed == 1        # C54 = assign
+    assert m.route([0xC0, 11]) == [] and link.armed == 1        # C55 still free
+    plain = PedalMapper()                                       # no link: faders as before
+    assert plain.route([0xB0, 72, 100])[0][0] == CONTROL
