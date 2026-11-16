@@ -79,3 +79,17 @@ Bez wygładzania (powtórzenia ±0,3 dB). RMS ataku, dB.
 - Płaska półka w środku, w obu rejestrach: od v40 do v61 głośność rośnie tylko o 2-4 dB (2-4 razy wolniej niż poniżej i powyżej), a v52 jest o 1,3-2,1 dB ciszej niż v51. Mniejsze odwrócenia także przy v68 i v89 (C2) oraz v44 i v60 (C4), po ok. 1-2 dB.
 - Dół w C4: skok +3,2 dB między v9 i v10 (inna warstwa próbek), w C2 dół łagodny.
 - Poziom: v127 ok. -20 dB, czyli ok. 5 dB ciszej niż Pianoteq i ok. 4 dB głośniej niż NOIRE.
+
+## Keyscape Yamaha C7, C2 i C4
+Bez wygładzania (powtórzenia ±0,4 dB). RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Keyscape C2 | -59.7 | -59.4 | -51.7 | -44.1 | -38.5 | -29.2 | 0.3 | 15.3 | 5.6 | 9.3 | 30.5 |
+| Keyscape C4 | -57.1 | -56.9 | -49.9 | -39.6 | -33.1 | -24.5 | 0.2 | 17.3 | 6.5 | 8.7 | 32.7 |
+
+- Dół to gotowe schodki samego instrumentu: warstwy v1-12, v13-21, v22-30, v31-37, w środku każdej głośność stoi (rozrzut 0,5-1,3 dB), a między nimi skoki 1,6-4 dB. Tak samo w obu rejestrach.
+- Od v38 w górę rośnie płynnie, ok. 0,2-0,3 dB na krok. Góra nie jest płaska.
+- v1-12 brzmi tak samo (ok. -60 dB w C2, -57 dB w C4), a jest wyraźnie jaśniejsze niż v13-40 (1500-2100 Hz wobec 600-1300 Hz): w najcichszej warstwie słychać pewnie głównie mechanikę i szum, mniej tonu.
+- Zakres od v12 do v127 ok. 33 dB w obu rejestrach. Poziom v127 ok. -24 do -28 dB (jak NOIRE).
+- Wniosek do schodków: dla Keyscape progi routera muszą trafiać w warstwy instrumentu (13, 22, 31, 38), inaczej dwa schodki w różnych miejscach dają albo dwa progi o tej samej głośności, albo zbyt duży skok.
