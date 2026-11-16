@@ -540,3 +540,19 @@ Ustawienia ze zrzutu: Key Response ON (Strength ok. połowa, przełącznik krzyw
 - Głośność prawie bez zmian: różnica względem włączonego najwyżej ok. 1 dB (v40-75), średnio 0,18 dB; od v80 w górę identycznie. Powtórzenia nadal ±0,04 dB, zero odwróceń.
 - Zmienia się barwa: bez wygładzania są tylko 4 warstwy próbek (v1-31, v32-63, v64-95, v96-127) i barwa skacze na granicach (środek widma C2: ok. 380 -> 450 -> 950 -> 1090 Hz, przy v64 ponad dwa razy jaśniej z nuty na nutę). Z włączonym wygładzaniem te przejścia rozkładają się płynnie na ok. 20 wartości velocity wokół granic.
 - Wniosek: Velocity Smoothing to przenikanie między warstwami, a nie uśrednianie siły kolejnych nut (przy uśrednianiu ramka byłaby przesunięta na całej długości, a od v80 różnica jest zerowa). Bezpieczne do testu celowania; lepiej zostawić włączone.
+
+## Aria Sounds Silk Piano, C2 i C4 (nowa metoda)
+Bez wygładzania. RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Silk C2 | -32.7 | -32.0 | -29.2 | -24.8 | -18.0 | -12.2 | 0.7 | 7.2 | 6.8 | 5.7 | 20.5 |
+| Silk C4 | -39.1 | -38.2 | -31.5 | -28.6 | -23.4 | -17.3 | 0.9 | 9.6 | 5.2 | 6.2 | 21.8 |
+
+- Czyste schodki jak w Hammers and Waves: głośność stała w obrębie warstwy (bez skalowania velocity), zmienia się tylko na granicach.
+- C2: 13 warstw po ok. 10 velocity (1-9, 10-19, 20-28, 29-38, 39-48, 49-58, 59-67, 68-77, 78-87, 88-97, 98-106, 107-116, 117-127). Skoki 0,3-4,4 dB (największy v68 +4,4 dB), dół v1-19 prawie płaski (0,7 dB).
+- C4: warstwy po 3 velocity (ok. 40 stopni), z kilkoma drobnymi odwróceniami do -0,6 dB (np. v10, v58, v89).
+- Wąski zakres: v1-127 ok. 20,5 dB (C2) i 24 dB (C4).
+- Najgłośniejszy instrument z mierzonych: v127 ok. -12 dB (C2) i -17 dB (C4).
+- C2 i C4 różnią się kształtem (do ok. 5 dB).
+- Ogon po zwolnieniu klawisza: ok. 18-20 dB pod atakiem, w C4 jaśniejszy niż sam atak (więcej energii powyżej 2 kHz po zwolnieniu niż przy uderzeniu); w Berlinie, Rosewood i AIR ogon jest ciemniejszy niż atak. To samo widać jednak w Estate, więc ten pomiar sam nie opisuje "sitarowego" brzmienia; widmo ogona jest harmoniczne, podobne do Berlina.
