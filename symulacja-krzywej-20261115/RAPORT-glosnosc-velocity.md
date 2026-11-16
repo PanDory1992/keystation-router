@@ -391,3 +391,18 @@ Bez wygładzania (powtórzenia ±0,3 dB). RMS ataku, dB.
 - Dół: v2-3 ok. 1 dB ciszej niż v1, potem v4 +2,8 dB.
 - Poziom v127 ok. -23 dB.
 - Kształt bardzo podobny do UVI C7 na 95% (różnica do ok. 1,5 dB aż do v90), choć to inny producent.
+
+## AIR Steinway D Grand, ustawienia domyślne, C2 i C4
+Bez wygładzania (powtórzenia ±0,3-0,4 dB). RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| AIR Steinway D C2 | -53.8 | -51.3 | -45.1 | -38.1 | -32.8 | -26.9 | 2.4 | 13.2 | 5.3 | 5.9 | 26.9 |
+| AIR Steinway D C4 | -54.7 | -52.2 | -45.9 | -38.4 | -33.2 | -27.8 | 2.5 | 13.8 | 5.2 | 5.4 | 26.9 |
+
+- Zakres v1-127 ok. 33 dB. Gładko: odchylenie od prostej ok. 0,7 dB, zero odwróceń.
+- C2 i C4 prawie identyczne (różnica względem v124 najwyżej 0,66 dB, średnio 0,23 dB). Jedna tabela na oba rejestry.
+- Te same granice warstw co AIR C7 Grand Real: v1-59, v60-89, v90-104, v105-115, v116-125, v126-127 (6 warstw, barwa stała w obrębie warstwy). Szwy: v60 +2,3/+2,8 dB, v90 +2,6/+2,5 dB, v105 +1,8/+1,6 dB, v116 +2,4/+1,9 dB, v126 +3,2/+3,3 dB (warstwa akcentu).
+- Krzywa prawie taka sama jak AIR C7: poniżej v90 stale ok. 1,2-1,4 dB niżej (względem v124), od v90 w górę różnica do 0,5 dB. To ta sama krzywa velocity silnika AIR, tylko inaczej wyrównane warstwy.
+- Poziom v127 ok. -24 dB (prawie jak AIR C7, ok. -23 dB).
+- Wniosek: AIR to jedna rodzina. Jedna tabela "Schodów" pasuje do obu fortepianów AIR i obu rejestrów (błąd do ok. 1,5 dB).
