@@ -66,3 +66,16 @@ Bez wygładzania (powtórzenia ±0,1–0,5 dB). RMS ataku, dB.
 - C2: szwy między warstwami próbek. v8 skacze o +5 dB, a v29 jest o 4,6 dB **ciszej** niż v28 (także v60 o 2 dB ciszej niż v59, v76 o 1,6 dB ciszej niż v75). Od v8 do v35 głośność stoi w miejscu (-62 do -58 dB), zmienia się tylko barwa. W basie Claire mocniejsze uderzenie w miękkiej strefie potrafi dać cichszy dźwięk: to wygląda jak losowość klawiatury, a jest instrumentem.
 - Całość ok. 18 dB ciszej niż Pianoteq przy tym samym velocity (v127: -32 dB wobec -15 dB). Poziom wyrównuje suwak, zakres się nie zmienia.
 - v1 jest odrobinę głośniejsze niż v2-3 (ok. 1 dB) w obu rejestrach.
+
+## Grandeur (Kontakt), C2 i C4
+Bez wygładzania (powtórzenia ±0,3 dB). RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Grandeur C2 | -52.4 | -50.8 | -44.4 | -36.6 | -31.4 | -21.8 | 1.6 | 14.2 | 5.3 | 9.5 | 30.6 |
+| Grandeur C4 | -58.2 | -51.9 | -43.2 | -36.9 | -28.8 | -21.3 | 6.3 | 15.0 | 8.1 | 7.6 | 36.9 |
+
+- Ogólnie rodzina Pianoteq/NOIRE: od v10 rośnie prawie równo (ok. 0,3 dB na krok), góra nie jest płaska. Zakres ok. 33 dB w C2 i ok. 39 dB w C4.
+- Płaska półka w środku, w obu rejestrach: od v40 do v61 głośność rośnie tylko o 2-4 dB (2-4 razy wolniej niż poniżej i powyżej), a v52 jest o 1,3-2,1 dB ciszej niż v51. Mniejsze odwrócenia także przy v68 i v89 (C2) oraz v44 i v60 (C4), po ok. 1-2 dB.
+- Dół w C4: skok +3,2 dB między v9 i v10 (inna warstwa próbek), w C2 dół łagodny.
+- Poziom: v127 ok. -20 dB, czyli ok. 5 dB ciszej niż Pianoteq i ok. 4 dB głośniej niż NOIRE.
