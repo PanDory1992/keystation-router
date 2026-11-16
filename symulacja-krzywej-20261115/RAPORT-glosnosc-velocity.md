@@ -556,3 +556,19 @@ Bez wygładzania. RMS ataku, dB.
 - Najgłośniejszy instrument z mierzonych: v127 ok. -12 dB (C2) i -17 dB (C4).
 - C2 i C4 różnią się kształtem (do ok. 5 dB).
 - Ogon po zwolnieniu klawisza: ok. 18-20 dB pod atakiem, w C4 jaśniejszy niż sam atak (więcej energii powyżej 2 kHz po zwolnieniu niż przy uderzeniu); w Berlinie, Rosewood i AIR ogon jest ciemniejszy niż atak. To samo widać jednak w Estate, więc ten pomiar sam nie opisuje "sitarowego" brzmienia; widmo ogona jest harmoniczne, podobne do Berlina.
+
+## Bösendorfer 290 Imperial (Ivory 2 przekonwertowany do Kontaktu), C2 i C4 (nowa metoda)
+Bez wygładzania (powtórzenia ±0,1 dB). RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Imperial C2 | -53.6 | -49.5 | -37.4 | -26.3 | -19.4 | -12.8 | 4.1 | 23.2 | 6.9 | 6.5 | 40.7 |
+| Imperial C4 | -55.0 | -50.9 | -38.9 | -28.8 | -20.7 | -13.7 | 4.1 | 22.0 | 8.1 | 7.0 | 41.3 |
+
+- Szeroki zakres: v1-127 ok. 45 dB w obu rejestrach. Gładko: zero skoków powyżej 1,4 dB, powtórzenia ±0,1 dB.
+- Krzywa wklęsła: ok. 0,9 dB na krok na dole, 0,55 w v10-40, 0,29 w środku, 0,19-0,21 na górze.
+- Warstwy z płynnym skalowaniem w środku, na granicach drobne spadki: C4 v41 -1,1 dB, C2 v56, v68, v89, v112 po -0,3 do -0,8 dB.
+- v1-40 to jedna próbka (barwa stała: C2 ok. 485 Hz, C4 ok. 775 Hz); nowe warstwy od v41.
+- C2 i C4 podobne (różnica średnio 0,8 dB, najwyżej 2,5 dB).
+- Bardzo głośno: v127 ok. -12,3 / -13,2 dB (jak Silk).
+- Inaczej niż Ivory III (German D i Modern Upright, prawie prosta ok. 0,3 dB na krok): różnica kształtu względem v124 do 5-8 dB, głównie na dole. Po konwersji krzywa velocity nie jest już krzywą silnika Ivory.
