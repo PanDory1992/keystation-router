@@ -216,3 +216,18 @@ Bez wygładzania (powtórzenia ±0,3 dB). RMS ataku, dB.
 - Wysoka podłoga: v1 tylko ok. 29 dB (C2) i 34 dB (C4) pod v127. Ten sam podpis co True Keys przy Velocity Amount 95%; możliwe, że ma podobne ustawienie.
 - Szew przy v54 w obu rejestrach: v54 ok. 3 dB ciszej niż v53 (C2 -3,4 dB, C4 -2,8 dB). Mniejsze odwrócenie przy v86 (ok. 1,2 dB).
 - Poziom v127 ok. -17 do -20 dB.
+
+## UVI Keysuite Fazioli (ten sam model co Claire), C2 i C4
+Bez wygładzania (powtórzenia ±0,2-0,3 dB). RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Keysuite Fazioli C2 | -48.8 | -45.5 | -38.4 | -31.3 | -27.0 | -23.6 | 3.3 | 14.3 | 4.2 | 3.4 | 25.2 |
+| Keysuite Fazioli C4 | -51.2 | -48.0 | -38.9 | -32.2 | -27.6 | -23.8 | 3.2 | 15.8 | 4.6 | 3.8 | 27.5 |
+
+- Wąsko: v1-127 ok. 28-30 dB, v1 tylko ok. 28-30 dB pod v127 (podpis podłogi, jak Keysuite Hybrid i True Keys przy 95%).
+- Płaska góra: od v60 do v127 tylko ok. 8 dB (0,10-0,15 dB na krok). Cała dynamika siedzi w v1-60.
+- Małe odwrócenia: C2 v11 (-2,3 dB) i v32 (-1,4 dB), C4 v39 (-2,0 dB).
+- Poziom v127 ok. -23 dB.
+- Porównanie z Claire (ten sam fortepian): Claire ma dynamikę na górze (v60-127 ok. 19 dB) i płaski, nierówny dół w C2; Keysuite Fazioli odwrotnie. Znowu: krzywa to wybór producenta.
+- Oba presety Keysuite mają ten sam podpis podłogi, więc prawdopodobnie decyduje o tym jedno ustawienie silnika Keysuite.
