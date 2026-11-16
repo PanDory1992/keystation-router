@@ -82,7 +82,18 @@ TOUCH_CYCLE_BUTTON = 9
 FREE_BUTTONS = (10, 11)
 # 15.11: "moje" = a curve fitted to Miki's own playing (contrast-limited equalisation of his raw velocities,
 # slope <= 2.5) plus contextual denoising and censored-1 handling (v2, below). Study: symulacja-krzywej-20261115.
-TOUCH_MODES = ("light", "acoustic", "heavy", "moje", "moje3")
+TOUCH_MODES = ("light", "acoustic", "heavy", "moje", "moje3", "naturalna", "szeroka")
+# 16.11 (Miki: "two curves, natural, wide, never think about it again"): C53 now steps only naturalna <-> szeroka.
+# Both: loudness follows the log of key speed. The sensor counts the time between the two dome contacts, raw = K - t/tau
+# (K = 131.7, fitted to the hand's noise at fixed intent: sigma(raw) = 12% of (K - raw) above raw 85), so
+# log speed = -ln(K - raw); then an S-shape like a felt hammer (most sensitive around raw 100, gentler at both ends).
+# In that scale the black hole 2..40 is only ~3 dB of key speed, so a black "1" (hole mean) sits ~2 dB below the softest
+# measured black. Input stage exactly as moje3 (denoise per level and hand, censored 1s). Older modes stay selectable
+# from the plugin / panel; if no cycle map exists, the button steps through all of them as before.
+# Study: symulacja-krzywej-20261115/RAPORT-naturalna.md
+TOUCH_CYCLE = ("naturalna", "szeroka")
+DENOISE3_MODES = ("moje3", "naturalna", "szeroka")          # per-level threshold + a phrase level per hand
+CENSORED_ONE_MODES = ("moje", "moje3", "naturalna", "szeroka")   # "1" = soft note in the hole, not the phrase rule
 # 15.11: "moje3" (Moje v3e) = Moje v2 + three changes, simulated in symulacja-krzywej-20261115/RAPORT-moje3.md:
 #  - the denoise threshold is min(12, 2 * sigma(level)): in forte the hand repeats within +-2..4 raw, so a change of
 #    6+ raw there is meant and passes (v2 shrank every change up to 12); in mezzo it stays 12 so accents keep their size;
@@ -105,7 +116,7 @@ ONE_CHORD_LOUD = 80
 ONE_CHORD_P = 0.6
 BLACK_MEASURED_MIN = 41  # the black sensor never sends 2..40
 TOUCH_FILE = ROOT / "touch-mode"
-DEFAULT_TOUCH = "acoustic"
+DEFAULT_TOUCH = "naturalna"
 MONITOR_NAME = "Keystation Monitor"   # copy of played notes (after mapping) for the dynamics mirror page
 # Live state for the mirror page (05.11): on the monitor port only, MIDI channel 16 CCs,
 # sent on every change and once a second: CC20 pedal mode (0 sustain, 1 sostenuto),
@@ -113,7 +124,7 @@ MONITOR_NAME = "Keystation Monitor"   # copy of played notes (after mapping) for
 # CC23 "1" mode (0 ppp, 1 context), CC24 keyboard connected (0/1).
 # Pedal CC64/66/67 sent to the play port are mirrored to the monitor port too.
 STATE_CHANNEL = 15
-TOUCH_CODE = {"light": 0, "acoustic": 1, "heavy": 2, "moje": 3, "moje3": 4}
+TOUCH_CODE = {"light": 0, "acoustic": 1, "heavy": 2, "moje": 3, "moje3": 4, "naturalna": 5, "szeroka": 6}
 RESTART_FILE = ROOT / "restart-router"   # create it: router exits cleanly, supervisor restarts it
 
 
@@ -430,8 +441,9 @@ class PedalMapper:
         return True
 
     def next_touch(self) -> str | None:
-        """The touch button: the next mode that has a map (TOUCH_MODES order, wrapping round)."""
-        modes = [m for m in TOUCH_MODES if m in self.touch_maps]
+        """The touch button: the next mode of TOUCH_CYCLE that has a map, wrapping round; from any other mode it goes to
+        the first. Without any cycle map: all TOUCH_MODES that have a map, as before 16.11."""
+        modes = [m for m in TOUCH_CYCLE if m in self.touch_maps] or [m for m in TOUCH_MODES if m in self.touch_maps]
         if not modes:
             return None
         k = modes.index(self.touch_mode) + 1 if self.touch_mode in modes else 0
@@ -578,7 +590,7 @@ class PedalMapper:
                 if self.velocity_map is not None:
                     black = data[1] % 12 in BLACK_KEYS
                     table = self.velocity_map[1 if black else 0]
-                    moje = self.touch_mode in ("moje", "moje3")
+                    moje = self.touch_mode in CENSORED_ONE_MODES
                     if data[2] == 1 and moje:
                         out = self.moje_one(channel, black, now)
                     elif data[2] == 1 and self.ones_context:
@@ -587,7 +599,7 @@ class PedalMapper:
                         raw = data[2]
                         if moje and raw > 1:
                             lo = BLACK_MEASURED_MIN if black and raw >= BLACK_MEASURED_MIN else 2
-                            if self.touch_mode == "moje3":
+                            if self.touch_mode in DENOISE3_MODES:
                                 raw = self.denoise3(channel, data[1], raw, now, lo)
                             else:
                                 raw = self.denoise(channel, raw, now, lo)

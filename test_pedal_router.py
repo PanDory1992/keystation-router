@@ -503,6 +503,70 @@ def test_moje3_map_has_no_ceiling_and_is_monotone():
     assert all(x <= y for x, y in zip(w[1:], w[2:])) and all(w[i] >= i for i in range(110, 128)) and w[1] == 9 and d["black"][1] == 14
 
 
+# --- 16.11: naturalna / szeroka (log key speed, S-shape) ------------------------------------------
+def _nat(mode="naturalna"):
+    import json
+    m = PedalMapper()
+    maps = {}
+    for k in ("moje3", "naturalna", "szeroka"):
+        d = json.loads((Path(__file__).parent / f"velocity-map.{k}.json").read_text(encoding="utf-8"))
+        maps[k] = (d["white"], d["black"])
+    m.touch_maps = maps
+    assert m.select_touch(mode)
+    return m
+
+
+def test_naturalna_and_szeroka_maps_are_one_monotone_curve_reaching_127():
+    import json
+    for k in ("naturalna", "szeroka"):
+        d = json.loads((Path(__file__).parent / f"velocity-map.{k}.json").read_text(encoding="utf-8"))
+        w, b = d["white"], d["black"]
+        assert len(w) == len(b) == 128
+        assert all(x <= y for x, y in zip(w[1:], w[2:])) and all(x <= y for x, y in zip(b[1:], b[2:]))
+        assert w[41:] == b[41:]                        # one sensor scale for both colours
+        assert w[2] == 10 and w[1] == 9                # floor; a white 1 is just below it
+        assert w[118] == 127 or w[117] == 127          # fff is reachable (his p99 is raw 117-118)
+        assert w[1] < b[1] < b[41]                     # black 1 = inside the hole, under the softest measured black
+        assert b[41] - b[1] <= 8                       # the hole is narrow on this scale (~2 dB)
+
+
+def test_button_steps_only_between_naturalna_and_szeroka():
+    m = _nat("moje3")
+    seen = []
+    for _ in range(4):
+        assert m.route([0xC0, 9]) == []
+        seen.append(m.touch_mode)
+    assert seen == ["naturalna", "szeroka", "naturalna", "szeroka"]
+    assert m.select_touch("moje3")                     # older modes stay selectable from the plugin / panel
+
+
+def test_naturalna_uses_the_moje3_input_stage():
+    import json
+    d = json.loads((Path(__file__).parent / "velocity-map.naturalna.json").read_text(encoding="utf-8"))
+    ident = list(range(128))
+    m3 = PedalMapper(); m3.touch_maps = {"moje3": (ident, ident)}; m3.select_touch("moje3")
+    mn = PedalMapper(); mn.touch_maps = {"naturalna": (ident, ident)}; mn.select_touch("naturalna")
+    seq = ((0.0, 40, 70), (0.01, 76, 95), (0.3, 43, 72), (0.31, 77, 101), (0.6, 79, 112), (2.5, 60, 50))
+    for t, note, v in seq:
+        assert m3.route([0x90, note, v], now=t) == mn.route([0x90, note, v], now=t)
+    # with the real map: white 1 just below the floor, black 1 in the hole, black after a loud chord mostly the chord
+    m = _nat()
+    m.route([0x90, 60, 100], now=0.0)
+    assert m.route([0x90, 62, 1], now=0.3)[0][1][2] == d["white"][1]
+    assert m.route([0x90, 61, 1], now=0.6)[0][1][2] == d["black"][1]
+    m.route([0x90, 72, 100], now=1.0); m.route([0x90, 76, 100], now=1.005)
+    assert m.route([0x90, 78, 1], now=1.01)[0][1][2] == round(0.6 * d["white"][100] + 0.4 * d["black"][1])
+
+
+def test_naturalna_follows_log_key_speed():
+    import json, math
+    d = json.loads((Path(__file__).parent / "velocity-map.naturalna.json").read_text(encoding="utf-8"))
+    w = d["white"]
+    # equal steps of key speed (ratio) give growing raw steps toward the soft end: raw 2..40 is a narrow slice
+    assert w[40] - w[2] < w[110] - w[100]
+    assert 70 <= w[100] <= 90 and 100 <= w[110] <= 120 and 15 <= w[41] <= 25
+
+
 # --- 15.11: SysEx backup ------------------------------------------------------------------
 from pedal_router import SYSEX_PROBES, SysexLog  # noqa: E402
 
