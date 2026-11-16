@@ -375,3 +375,19 @@ Bez wygładzania. RMS ataku, dB.
 - Zakres v1-127 ok. 22 dB (C2) i 28 dB (C4); wąski, podobny do Walkera na ustawieniach domyślnych. Poziom v127 ok. -20 dB (głośno, jak Alicia's Keys).
 - Barwa rośnie z każdą warstwą (C2 ok. 350 -> 1050 Hz, C4 ok. 560 -> 1390 Hz), więc każdy stopień to też nowa barwa.
 - Drobna wada: v2-3 ok. 2 dB ciszej niż v1 i v4.
+
+## AIR Yamaha C7 Grand Real, ustawienia domyślne, C2 i C4
+Bez wygładzania (powtórzenia ±0,3 dB). RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| AIR C7 C2 | -51.8 | -49.3 | -43.1 | -36.3 | -32.3 | -26.3 | 2.5 | 13.1 | 4.0 | 6.0 | 25.5 |
+| AIR C7 C4 | -52.7 | -50.2 | -44.0 | -36.4 | -31.7 | -26.8 | 2.5 | 13.8 | 4.7 | 5.0 | 25.9 |
+
+- Zakres v1-127 ok. 31-32 dB. Gładko: odchylenie od prostej ok. 0,85 dB, zero odwróceń.
+- C2 i C4 mają prawie ten sam kształt (różnica względem v124 najwyżej ok. 1 dB, średnio 0,5 dB). To pierwszy instrument, w którym jedna tabela naprawdę pasuje do obu rejestrów.
+- Tylko 6 warstw próbek (barwa stała w obrębie warstwy, głośność skalowana płynnie): v1-59, v60-89, v90-104, v105-115, v116-125, v126-127. Środek widma C2: ok. 290-305 Hz, 411, 668, 952, 1272, 1375 Hz.
+- Szwy na granicach: v60 +2,1/+2,8 dB, v90 +1,9 dB (C4), v116 +2,9/+2,1 dB, v126 +2,9/+3,3 dB. v126-127 to osobna warstwa akcentu ok. 3 dB ponad v125.
+- Dół: v2-3 ok. 1 dB ciszej niż v1, potem v4 +2,8 dB.
+- Poziom v127 ok. -23 dB.
+- Kształt bardzo podobny do UVI C7 na 95% (różnica do ok. 1,5 dB aż do v90), choć to inny producent.
