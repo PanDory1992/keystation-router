@@ -178,3 +178,15 @@ Bez wygładzania (powtórzenia ±0,2-0,4 dB). RMS ataku, dB.
 - Poziom v127 ok. -16 do -19 dB. Zakres C4 v1-127 ok. 51 dB.
 - Ten sam model co Pianoverse Black Diamond, a wady w zupełnie innych miejscach (Pianoverse: urwisko v8/v9).
 - Wniosek o metodzie: wada siedzi w jednym rejestrze. Dwie nuty (C2, C4) nie wystarczą, żeby uznać bibliotekę próbek za czystą; przed zbudowaniem tabeli dla instrumentów z próbek warto zmierzyć 2-3 nuty więcej.
+
+## True Keys American, Vel. Sensitivity 60% (wcześniej 40%), C2 i C4
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| True Keys 60% C2 | -49.0 | -48.6 | -44.6 | -37.5 | -32.1 | -26.9 | 0.4 | 11.2 | 5.4 | 5.2 | 22.1 |
+| True Keys 60% C4 | -52.4 | -51.7 | -48.4 | -40.0 | -34.4 | -29.6 | 0.7 | 11.8 | 5.6 | 4.7 | 22.8 |
+
+- Końce bez zmian: v1 i v127 dokładnie tak samo głośne jak przy 40%, więc zakres się nie poszerzył (v1-127 nadal ok. 25 dB w C2 i 31 dB w C4).
+- Zmienił się tylko środek: ciszej o 1,3 dB przy v10, o 3,6 dB przy v30, o 3,0 dB przy v60, o 1,5 dB przy v90. Góra jest przez to mniej płaska (v60-127: 11,6 dB zamiast 8,6 dB).
+- Jasność przy każdym velocity identyczna jak przy 40%: ta gałka nie zmienia wyboru próbek, tylko dokłada głośność według krzywej.
+- Wniosek: Vel. Sensitivity to po prostu krzywa velocity wewnątrz instrumentu. Router ze schodkami robi to samo, więc dla trybu Schody ustawienie tej gałki prawie nie ma znaczenia; zakresu (22-31 dB) nie poszerza.
