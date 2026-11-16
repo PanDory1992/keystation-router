@@ -203,3 +203,16 @@ Bez wygładzania (powtórzenia ±0,2-0,4 dB). RMS ataku, dB.
 - Wyjaśnienie: przy 95% instrument zostawia 5% głośności nawet przy najsłabszym uderzeniu (20·log10(0,05) = -26 dB), stąd dawny zakres ok. 25-31 dB. Przy 100% ta podłoga znika.
 - Dół jest teraz bardzo stromy: v1-10 to ok. 1,5-10 dB na każdą wartość velocity. Bez schodków najsłabsze uderzenia będą skakać; ze schodkami router sam wybierze najcichszy słyszalny poziom.
 - Wniosek: ustawienie w instrumencie poszerzyło zakres tam, gdzie router nie mógł. 45 dB mieści 11-12 schodków po 4 dB.
+
+## UVI Keysuite Hybrid Custom, C2 i C4
+Bez wygładzania (powtórzenia ±0,3 dB). RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Keysuite C2 | -45.2 | -44.9 | -42.2 | -34.4 | -25.3 | -17.4 | 0.4 | 10.4 | 9.1 | 8.0 | 27.9 |
+| Keysuite C4 | -51.4 | -49.7 | -46.4 | -38.0 | -29.1 | -21.1 | 1.7 | 11.7 | 9.0 | 8.0 | 30.3 |
+
+- Odwrotność Ravenscrofta: płaski dół, żywa góra. Od v1 do v30 tylko ok. 4-8 dB, od v30 do v127 ok. 25 dB (ok. 0,25-0,3 dB na krok, bez płaskiej góry).
+- Wysoka podłoga: v1 tylko ok. 29 dB (C2) i 34 dB (C4) pod v127. Ten sam podpis co True Keys przy Velocity Amount 95%; możliwe, że ma podobne ustawienie.
+- Szew przy v54 w obu rejestrach: v54 ok. 3 dB ciszej niż v53 (C2 -3,4 dB, C4 -2,8 dB). Mniejsze odwrócenie przy v86 (ok. 1,2 dB).
+- Poziom v127 ok. -17 do -20 dB.
