@@ -406,3 +406,19 @@ Bez wygładzania (powtórzenia ±0,3-0,4 dB). RMS ataku, dB.
 - Krzywa prawie taka sama jak AIR C7: poniżej v90 stale ok. 1,2-1,4 dB niżej (względem v124), od v90 w górę różnica do 0,5 dB. To ta sama krzywa velocity silnika AIR, tylko inaczej wyrównane warstwy.
 - Poziom v127 ok. -24 dB (prawie jak AIR C7, ok. -23 dB).
 - Wniosek: AIR to jedna rodzina. Jedna tabela "Schodów" pasuje do obu fortepianów AIR i obu rejestrów (błąd do ok. 1,5 dB).
+
+## Roland Earth Classic Grand, C2 i C4
+Bez wygładzania (powtórzenia ±0,2 dB). RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Roland Classic Grand C2 | -48.2 | -47.3 | -42.6 | -35.3 | -28.9 | -22.7 | 0.8 | 12.1 | 6.3 | 6.2 | 25.5 |
+| Roland Classic Grand C4 | -47.1 | -46.3 | -41.2 | -33.9 | -28.1 | -22.2 | 0.8 | 12.4 | 5.8 | 5.9 | 24.8 |
+
+- v1 to cisza (ok. -97 do -99 dB, czyli ok. 75 dB pod v2). Roland nie gra nuty z velocity 1.
+- Od v2 do v127 ok. 28-29 dB. Bardzo gładko: odchylenie od prostej ok. 0,7-0,8 dB, zero odwróceń, powtórzenia ±0,2 dB. Jedyny szew: v4 +2,1-2,6 dB.
+- Krzywa prawie prosta w dB: ok. 0,24 dB na krok w v10-40, 0,22 w v40-80, 0,18 w v80-127. Góra nie jest płaska (v90-124 ok. 6 dB).
+- Barwa rośnie płynnie (C2 ok. 210 -> 1160 Hz, C4 ok. 505 -> 1370 Hz), bez widocznych skoków warstw.
+- C2 i C4 mają ten sam kształt (różnica najwyżej 1,2 dB, średnio 0,4 dB): jedna tabela na oba rejestry.
+- Poziom v127 ok. -22 dB.
+- Uwaga techniczna: po bounce C4 pierwsze "cofnij" w Studio One cofnęło inny krok (nie bounce), dopiero drugie usunęło bounce. Pomiar nie jest tym dotknięty (nagranie było już gotowe).
