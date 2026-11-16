@@ -465,3 +465,18 @@ Bez wygładzania (powtórzenia ±0,2 dB). RMS ataku, dB.
 - C2 i C4 prawie ten sam kształt (różnica średnio 0,8 dB, najwyżej 1,4 dB).
 - Poziom v127 ok. -16,5 / -18 dB (głośno).
 - Kształtem najbliżej Pianoteq (od v10: C2 średnio 0,0 dB różnicy, odchylenie 0,7 dB; C4 0,6 / 0,9 dB) i Ivory Modern Upright (C4 odchylenie 0,6 dB).
+
+## Sforzando Ivy Piano, C2 i C4
+Bez wygładzania. RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Ivy Piano C2 | -100.7 | -88.5 | -75.9 | -54.7 | -45.7 | -36.6 | 12.2 | 33.9 | 8.9 | 9.1 | 64.1 |
+| Ivy Piano C4 | -98.3 | -94.6 | -66.9 | -51.5 | -41.5 | -35.6 | 3.7 | 43.1 | 10.0 | 5.9 | 62.8 |
+
+- Dół jest nieużyteczny: v1 to cisza, v2-5 ok. 60-90 dB pod v127, a w v7-33 kolejne nuty skaczą na przemian o ±5-8 dB (C2 i C4). W C4 v10-33 aż 12 odwróceń po 5-8 dB.
+- Od v34 w górę spokojniej: ok. 0,31 dB na krok, zakres v34-127 ok. 29-30 dB, odchylenie od prostej ok. 1,2 dB, szum ±0,6-0,8 dB, drobny zygzak ±1,5 dB.
+- W C2 nuta v122 w ogóle nie zabrzmiała (ok. -76 dB, tak jak cisza między nutami). Prawdopodobnie brak próbki w jednym wariancie albo błąd biblioteki; do sprawdzenia, czy powtarza się przy ponownym pomiarze.
+- Poziom v127 ok. -33/-35 dB (cicho, jak Walker).
+- C2 i C4 różnią się na dole o kilkadziesiąt dB, od v34 podobnie.
+- Wniosek: do nauki dynamiki tylko zakres v34-127; "Schody" dla Ivy muszą zaczynać od ok. v34.
