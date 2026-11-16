@@ -164,3 +164,17 @@ Bez wygładzania (powtórzenia ±0,2-0,3 dB). RMS ataku, dB.
 - Prawie bez odwróceń (w C4 v17 i v33 po ok. 1,7 dB ciszej niż poprzednie).
 - Poziom v127 ok. -26 do -29 dB, ok. 11-14 dB ciszej niż Pianoteq.
 - Wniosek: ten sam fortepian w dwóch programach ma zupełnie inną krzywą, więc krzywa to wybór producenta, nie cecha fortepianu. Tabela schodków musi być na instrument, nie na model fortepianu.
+
+## UVI Austrian Grand (Bösendorfer 280VC), C2 i C4
+Bez wygładzania (powtórzenia ±0,2-0,4 dB). RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Austrian C2 | -55.5 | -52.2 | -43.7 | -36.2 | -26.5 | -16.3 | 3.3 | 16.0 | 9.7 | 10.2 | 39.2 |
+| Austrian C4 | -62.0 | -59.1 | -50.3 | -46.3 | -30.2 | -19.9 | 2.9 | 12.8 | 16.1 | 10.2 | 42.1 |
+
+- C2: wzorowo. Bez odwróceń, szeroki zakres (v1-127 ok. 44 dB), góra nie płaska, a nawet bardziej stroma niż środek (ok. 0,3 dB na krok od v60).
+- C4: dziura w środku. Warstwa v44-62 jest ok. 5 dB za cicha: v44 ok. 4,9 dB ciszej niż v43, a v63 ok. 4,7 dB głośniej niż v62. Od v43 do v61 głośność wraca do tego samego miejsca; między v40 i v60 tylko 0,7 dB. To dokładnie strefa 30-60 i rejestr melodii.
+- Poziom v127 ok. -16 do -19 dB. Zakres C4 v1-127 ok. 51 dB.
+- Ten sam model co Pianoverse Black Diamond, a wady w zupełnie innych miejscach (Pianoverse: urwisko v8/v9).
+- Wniosek o metodzie: wada siedzi w jednym rejestrze. Dwie nuty (C2, C4) nie wystarczą, żeby uznać bibliotekę próbek za czystą; przed zbudowaniem tabeli dla instrumentów z próbek warto zmierzyć 2-3 nuty więcej.
