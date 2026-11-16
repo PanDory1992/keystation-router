@@ -344,3 +344,18 @@ Bez wygładzania; powtórzenia ok. ±0,6 dB (C2) i ±0,9 dB (C4). RMS ataku, dB.
 - Dół płaski: v1-12 tylko ok. 4 dB, v5-10 ok. 0,7 dB (podobny podpis podłogi jak przy 95% w UVI).
 - Zygzak zostaje, w C4 nawet mocniejszy (v16-49 na przemian ±2-4 dB, 18 odwróceń). W C2 nowy zygzak v77-82 (±2,7 dB).
 - Zmieniono naraz dwie rzeczy (dynamika i liczba warstw). Kształt różnicy wskazuje, że prawie cały efekt głośności to dynamika; warstwy wpływają na barwę i miejsca szwów.
+
+## Alicia's Keys (Acoustic, Yamaha), C2 i C4
+Bez wygładzania (powtórzenia ±0,3-0,4 dB). RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Alicia's Keys C2 | -51.3 | -51.2 | -43.8 | -33.6 | -26.5 | -21.4 | 0.1 | 17.7 | 7.0 | 5.1 | 29.9 |
+| Alicia's Keys C4 | -44.6 | -42.3 | -37.7 | -29.2 | -23.2 | -17.7 | 2.3 | 13.1 | 6.0 | 5.5 | 26.9 |
+
+- Zakres v1-127 ok. 30 dB (C2) i 27 dB (C4). Dół płaski: w C2 v1-14 prawie bez zmian (v5-10 tylko 0,1 dB), w C4 v1-9 ok. 1,5 dB.
+- Widać budowę warstw: barwa (środek widma) stoi w miejscu w obrębie bloku i skacze na granicy. Granice co ok. 8 velocity: v20, 28, 36, 44, 52, 60, 68, 76, 84, 92, 100, 115 (ostatnie dwie warstwy szersze: v100-114 i v115-127; pod v20 jedna szeroka warstwa). Razem ok. 13 warstw. W obrębie warstwy głośność rośnie płynnie, ok. 0,3 dB na krok, przy tej samej próbce.
+- Szwy na granicach warstw: C2 v28 +2,1 dB, v78 -1,9 dB; C4 v20 +2,0 dB, v28 +3,5 dB, v78 -1,9 dB.
+- Największa wada: w C4 warstwa v92-99 jest o ok. 3 dB za głośna. v92 skacze o +3,3 dB, a v100 spada o -3,1 dB, więc v100-117 jest ciszej niż v99 (18 wartości velocity z rzędu odwróconych). W C2 tej wady nie ma.
+- Głośny poziom: v127 ok. -21 dB (C2) i -17 dB (C4), czyli najgłośniej z mierzonych, ok. 13-16 dB głośniej niż Walker.
+- Góra nie jest płaska: v90-124 ok. 5 dB (Walker ok. 3,5 dB).
