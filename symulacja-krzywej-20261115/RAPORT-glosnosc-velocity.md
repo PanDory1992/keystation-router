@@ -149,3 +149,18 @@ Bez wygładzania (powtórzenia ±0,2 dB). RMS ataku, dB.
 - Dół stromy, ale ciągły (bez warstw): v3-10 to 12-17 dB, czyli ok. 2 dB na każdą wartość velocity.
 - Poziom v127 ok. -18 do -20 dB.
 - Wniosek: najczystszy i najszerszy instrument z pomiarów. Mieści 12-13 schodków po 4 dB; dobry wzorzec do testu celowania.
+
+## True Keys American (Steinway D NY, ten sam model co pierwszy preset Pianoteqa), C2 i C4
+Bez wygładzania (powtórzenia ±0,2-0,3 dB). RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| True Keys C2 | -48.5 | -47.3 | -41.0 | -34.5 | -30.6 | -26.8 | 1.2 | 12.8 | 3.9 | 3.8 | 21.8 |
+| True Keys C4 | -52.0 | -50.4 | -44.8 | -37.0 | -32.8 | -29.5 | 1.6 | 13.4 | 4.2 | 3.3 | 22.4 |
+
+- Zakres najwęższy ze wszystkich: v5-124 ok. 22-23 dB (Pianoteq ten sam model: ok. 37 dB). v1-127 ok. 25 dB w C2 i 31 dB w C4.
+- Płaska góra: od v60 do v127 tylko ok. 8,5 dB (Pianoteq: ok. 17 dB). Mocniej znaczy tu głównie jaśniej: w C4 jasność rośnie z ok. 860 Hz (v60) do ok. 1530 Hz (v127).
+- Dół głośny i płaski: v1-12 w C2 w granicach ok. 4 dB.
+- Prawie bez odwróceń (w C4 v17 i v33 po ok. 1,7 dB ciszej niż poprzednie).
+- Poziom v127 ok. -26 do -29 dB, ok. 11-14 dB ciszej niż Pianoteq.
+- Wniosek: ten sam fortepian w dwóch programach ma zupełnie inną krzywą, więc krzywa to wybór producenta, nie cecha fortepianu. Tabela schodków musi być na instrument, nie na model fortepianu.
