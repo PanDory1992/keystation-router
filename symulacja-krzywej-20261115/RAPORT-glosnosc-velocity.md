@@ -285,3 +285,17 @@ Bez wygładzania; Kawai ma powtórzenia ±1,7-1,9 dB (round robin), więc pojedy
 - Spadki przy każdym velocity mniejsze niż w UVI C7 i True Keys (np. v30: -2 dB zamiast -3,9 dB): ta sama gałka, ale inna krzywa próbek pod spodem.
 - Płaska góra została: od v60 do v124 nadal ok. 10-11 dB. Prawie cała nowa dynamika jest poniżej v40, jak w Ravenscrofcie.
 - Uwaga: ten sam podpis podłogi przy 95% tu nie był widoczny (v1 już ok. 42-48 dB pod v127), bo Kawai ma też ciche warstwy próbek.
+
+## Ivory III German D, C2 i C4
+Bez wygładzania (powtórzenia ±0,2-0,3 dB). RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Ivory German D C2 | -54.4 | -52.7 | -45.9 | -37.1 | -29.5 | -19.6 | 1.7 | 15.6 | 7.6 | 9.9 | 34.8 |
+| Ivory German D C4 | -59.6 | -57.9 | -51.5 | -39.9 | -30.7 | -19.6 | 1.7 | 17.9 | 9.3 | 11.0 | 39.9 |
+
+- Prawie prosta linia w dB od v10 do v127: ok. 0,29 (C2) i 0,33 (C4) dB na krok, bez płaskiej góry (góra tak samo stroma jak środek). Odchylenie od prostej w C2 ok. 0,7 dB, tyle co Pianoteq i UVI Austrian C2; najbliżej prostej z wszystkich pomiarów razem z nimi.
+- Zakres v1-127 ok. 37 dB (C2) i 42 dB (C4). Dół v1-10 płaski (ok. 3 dB).
+- Wady: C2 v66 ok. 2,1 dB ciszej niż v65; C4 skok +3,6 dB przy v36 i +2,0 dB przy v111.
+- Poziom v127 ok. -18,7 dB w obu rejestrach (identycznie).
+- Wniosek: równe odstępy velocity dają tu prawie równe kroki w dB; schodki dla Ivory to prawie zwykły podział co ok. 13 wartości velocity (4 dB).
