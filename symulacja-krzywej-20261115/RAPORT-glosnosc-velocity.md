@@ -327,3 +327,20 @@ Bez wygładzania; powtórzenia ok. ±0,6 dB (C2) i ±0,8 dB (C4), więc pojedync
 - Poziom v127 ok. -33 do -34 dB: o ok. 11-15 dB ciszej niż Ivory czy Kawai na tym samym ustawieniu. Przy przełączaniu instrumentów trzeba to wyrównać suwakiem.
 - Najciemniejszy Steinway D z mierzonych: środek widma przy v127 ok. 900 Hz w C2 (Addictive ok. 1280, Pianoteq ok. 1420). Barwa rośnie dalej w v90-127 (C2 ok. 670 -> 900 Hz), choć głośność prawie stoi.
 - Porównanie z innymi Steinwayami D (C2, względem v124): v30 Walker -21,5, Addictive -20,0, True Keys 100% -18,0, Pianoteq -25,2; v90 Walker -3,5, Addictive -5,0, True Keys -4,0, Pianoteq -8,4. Walker najbliżej Addictive, tylko z większym szumem.
+
+## Walker 1955 Concert D, ustawienia domyślne (dynamika nieliniowa, 18 warstw velocity), C2 i C4
+Bez wygładzania; powtórzenia ok. ±0,6 dB (C2) i ±0,9 dB (C4). RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Walker domyślnie C2 | -52.0 | -51.3 | -47.7 | -43.6 | -36.5 | -34.1 | 0.7 | 7.7 | 7.1 | 2.4 | 17.9 |
+| Walker domyślnie C4 | -55.8 | -55.1 | -48.4 | -41.0 | -36.0 | -33.1 | 0.7 | 14.1 | 5.0 | 2.9 | 22.8 |
+| (liniowo, 36 warstw) C2 | -67.3 | -64.8 | -55.9 | -47.6 | -37.7 | -34.1 | 2.5 | 17.2 | 9.9 | 3.6 | 33.2 |
+| (liniowo, 36 warstw) C4 | -72.5 | -69.7 | -58.1 | -45.1 | -36.6 | -33.1 | 2.8 | 24.6 | 8.5 | 3.5 | 39.4 |
+
+- Zakres v1-127 spada z ok. 35/41 dB do ok. 19/23 dB: najwęższy ze wszystkich pomiarów (wcześniej najwęższe Fazioli Keysuite ok. 28-30 dB).
+- Góra bez zmian (v127 ok. -33/-34 dB, od v90 różnica poniżej 0,6 dB). Dół podniesiony płynnie: v1 o ok. 16-18 dB, v20 o ok. 11-13 dB, v50 o ok. 3,5 dB. Różnica rośnie gładko w stronę dołu, więc to działa jak kompresor (wzmocnienie zależne od velocity), a nie jak inny wybór próbek.
+- Barwa prawie ta sama co przy ustawieniu liniowym (środek widma C2: v10 ok. 300 Hz, v127 ok. 900 Hz). Ciche nuty to te same ciche próbki, tylko głośniej. Jedyna widoczna różnica od 18 warstw: w C2 barwa stoi w miejscu od v5 do v20 (ok. 300 Hz), a przy 36 warstwach już tam lekko jaśnieje.
+- Dół płaski: v1-12 tylko ok. 4 dB, v5-10 ok. 0,7 dB (podobny podpis podłogi jak przy 95% w UVI).
+- Zygzak zostaje, w C4 nawet mocniejszy (v16-49 na przemian ±2-4 dB, 18 odwróceń). W C2 nowy zygzak v77-82 (±2,7 dB).
+- Zmieniono naraz dwie rzeczy (dynamika i liczba warstw). Kształt różnicy wskazuje, że prawie cały efekt głośności to dynamika; warstwy wpływają na barwę i miejsca szwów.
