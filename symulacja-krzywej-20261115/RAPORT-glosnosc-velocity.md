@@ -359,3 +359,19 @@ Bez wygładzania (powtórzenia ±0,3-0,4 dB). RMS ataku, dB.
 - Największa wada: w C4 warstwa v92-99 jest o ok. 3 dB za głośna. v92 skacze o +3,3 dB, a v100 spada o -3,1 dB, więc v100-117 jest ciszej niż v99 (18 wartości velocity z rzędu odwróconych). W C2 tej wady nie ma.
 - Głośny poziom: v127 ok. -21 dB (C2) i -17 dB (C4), czyli najgłośniej z mierzonych, ok. 13-16 dB głośniej niż Walker.
 - Góra nie jest płaska: v90-124 ok. 5 dB (Walker ok. 3,5 dB).
+
+## Hammers and Waves Modern Grand, C2 i C4
+Bez wygładzania. RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Hammers and Waves C2 | -42.6 | -42.5 | -39.0 | -36.1 | -26.3 | -20.4 | 0.1 | 6.3 | 9.8 | 6.0 | 22.2 |
+| Hammers and Waves C4 | -48.8 | -48.7 | -44.4 | -39.0 | -28.4 | -20.5 | 0.1 | 9.8 | 10.6 | 7.9 | 28.3 |
+
+- Czyste schodki: 12 warstw, każda o stałej głośności i barwie (w obrębie warstwy odchylenie tylko 0,1-0,2 dB, bez skalowania velocity i bez powtórzeń). Głośność zmienia się tylko na granicach.
+- Warstwy (velocity, poziom C2 / C4 w dB): 1-29 (-42,4 / -48,8), 30-48 (-39,3 / -44,5), 49-62 (-36,1 / -39,0), 63-71 (-32,4 / -35,6), 72-79 (-30,0 / -32,8), 80-86 (-27,9 / -30,1), 87-92 (-26,3 / -28,4), 93-98 (-24,9 / -26,7), 99-103 (-23,6 / -25,3), 104-107 (-22,5 / -23,9), 108-115 (-21,8 / -22,5), 116-127 (-20,4 / -20,7).
+- Stopnie są nierówne: na dole 3-5,5 dB, na górze tylko 0,8-1,8 dB. Warstwy na dole szerokie (v1-29 to jedna próbka), na górze wąskie (v104-107 to tylko 4 wartości).
+- Cała jedna czwarta zakresu velocity (v1-29) brzmi identycznie. Pianissimo nie da się tu stopniować.
+- Zakres v1-127 ok. 22 dB (C2) i 28 dB (C4); wąski, podobny do Walkera na ustawieniach domyślnych. Poziom v127 ok. -20 dB (głośno, jak Alicia's Keys).
+- Barwa rośnie z każdą warstwą (C2 ok. 350 -> 1050 Hz, C4 ok. 560 -> 1390 Hz), więc każdy stopień to też nowa barwa.
+- Drobna wada: v2-3 ok. 2 dB ciszej niż v1 i v4.
