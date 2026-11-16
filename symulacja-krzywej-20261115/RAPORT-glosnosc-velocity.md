@@ -244,3 +244,18 @@ Bez wygładzania (powtórzenia ±0,2-0,3 dB). RMS ataku, dB.
 - Zakres v5-124 ok. 31-33 dB, v1-127 ok. 34-36 dB; v1-12 w granicach ok. 7 dB (lekki podpis podłogi).
 - Środek v10-60 w C2 prawie identyczny z Pianoteqiem (ten sam Steinway NY): średnio 0.0 dB różnicy, najwyżej 0.7 dB. Rozjeżdżają się tylko końce: Pianoteq ma ok. 5-6 dB głośniejszą górę i dużo cichszy dół.
 - Poziom v127 ok. -20 do -21 dB.
+
+## Addictive Keys Modern Upright, C2 i C4
+Bez wygładzania (powtórzenia ±0,1-0,2 dB). RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| AK Upright C2 | -53.9 | -51.1 | -42.4 | -33.8 | -27.3 | -21.2 | 2.7 | 17.3 | 6.6 | 6.1 | 32.6 |
+| AK Upright C4 | -51.9 | -49.4 | -41.1 | -32.6 | -25.3 | -18.2 | 2.6 | 16.8 | 7.3 | 7.1 | 33.8 |
+
+- Najczystszy instrument z próbek w całych pomiarach: od v10 zero odwróceń w obu rejestrach, w C4 ani jednego skoku powyżej 1,4 dB, powtórzenia ±0,1 dB.
+- Krok maleje łagodnie: ok. 0,38 dB do v40, ok. 0,2 dB powyżej v90.
+- Zakres v1-127 ok. 36-37 dB, v1-12 w granicach ok. 6-8 dB (lekki podpis podłogi, jak w Studio Grand).
+- Od v30 w górę prawie identyczny z VI Labs Modern U (różnica do ok. 1,5 dB). Różnią się tylko dołem: VI Labs schodzi o 10-19 dB niżej.
+- Oba Addictive Keys mają podobną podłogę (v1 ok. 34-37 dB pod v127), więc to raczej cecha silnika Addictive Keys niż próbek.
+- Poziom v127 ok. -18 do -21 dB.
