@@ -231,3 +231,16 @@ Bez wygładzania (powtórzenia ±0,2-0,3 dB). RMS ataku, dB.
 - Poziom v127 ok. -23 dB.
 - Porównanie z Claire (ten sam fortepian): Claire ma dynamikę na górze (v60-127 ok. 19 dB) i płaski, nierówny dół w C2; Keysuite Fazioli odwrotnie. Znowu: krzywa to wybór producenta.
 - Oba presety Keysuite mają ten sam podpis podłogi, więc prawdopodobnie decyduje o tym jedno ustawienie silnika Keysuite.
+
+## Addictive Keys Studio Grand (Steinway NY), C2 i C4
+Bez wygładzania (powtórzenia ±0,2-0,3 dB). RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Addictive C2 | -51.3 | -48.5 | -40.3 | -31.4 | -25.3 | -20.1 | 2.8 | 17.2 | 6.0 | 5.2 | 31.2 |
+| Addictive C4 | -53.9 | -51.5 | -42.3 | -35.1 | -26.5 | -21.4 | 2.4 | 16.4 | 8.6 | 5.1 | 32.5 |
+
+- Gładko i bez odwróceń (C2 żadnego, C4 jedno małe przy v33, ok. 1,1 dB). Krok maleje łagodnie: ok. 0,38 dB do v40, ok. 0,15 dB powyżej v90.
+- Zakres v5-124 ok. 31-33 dB, v1-127 ok. 34-36 dB; v1-12 w granicach ok. 7 dB (lekki podpis podłogi).
+- Środek v10-60 w C2 prawie identyczny z Pianoteqiem (ten sam Steinway NY): średnio 0.0 dB różnicy, najwyżej 0.7 dB. Rozjeżdżają się tylko końce: Pianoteq ma ok. 5-6 dB głośniejszą górę i dużo cichszy dół.
+- Poziom v127 ok. -20 do -21 dB.
