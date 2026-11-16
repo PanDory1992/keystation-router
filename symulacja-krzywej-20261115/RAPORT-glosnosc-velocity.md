@@ -436,3 +436,17 @@ Bez wygładzania (powtórzenia ±0,4 dB). RMS ataku, dB.
 - Warstwy (barwa): w górnej połowie co ok. 8 velocity (C2 ok. v57, 70, 80, 88, 96, 104, 112, 120, 127).
 - C2 i C4 różnią się kształtem (do ok. 5 dB), więc osobne tabele dla rejestrów.
 - Poziom v127 ok. -16 dB (C2) i -21 dB (C4): najgłośniej z mierzonych w basie.
+
+## Galaxy Vintage D, Basic Grand, Dynamics +20%, C2 i C4
+Bez wygładzania (powtórzenia ±0,4 dB). RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Galaxy +20% C2 | -68.5 | -64.0 | -52.1 | -41.4 | -31.5 | -18.2 | 4.5 | 22.6 | 9.9 | 13.3 | 50.3 |
+| Galaxy +20% C4 | -78.3 | -72.2 | -56.0 | -43.8 | -33.9 | -23.2 | 6.0 | 28.4 | 9.9 | 10.7 | 55.1 |
+
+- Zakres v1-127 z ok. 50 do 59 dB (C2) i z ok. 56 do 65 dB (C4). v127 bez zmian (ok. -16 / -21 dB).
+- Zmiana jest dokładnie liniowa w dB: różnica = -0,0692 x (127 - v) dB, czyli v1 ciszej o 8,7 dB, v64 o 4,4 dB, v127 bez zmian. Odchylenie od tej prostej najwyżej 0,06 dB, w obu rejestrach to samo.
+- Te same próbki (barwa identyczna co do herca). Gałka Dynamics to tylko pochylenie głośności, nie wybór warstw.
+- Piła zostaje: spadki v43 (-3,1 / -2,5 dB), v104 (-2,6 / -2,4 dB), v120 (-2,0 / -1,9 dB) prawie tej samej wielkości, 14-16 odwróceń.
+- Wniosek: każde +10% Dynamics dodaje ok. 4,4 dB zakresu (0,035 dB na krok velocity poniżej 127). Krzywą dla innego ustawienia można policzyć bez nowego pomiaru.
