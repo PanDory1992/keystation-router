@@ -572,3 +572,19 @@ Bez wygładzania (powtórzenia ±0,1 dB). RMS ataku, dB.
 - C2 i C4 podobne (różnica średnio 0,8 dB, najwyżej 2,5 dB).
 - Bardzo głośno: v127 ok. -12,3 / -13,2 dB (jak Silk).
 - Inaczej niż Ivory III (German D i Modern Upright, prawie prosta ok. 0,3 dB na krok): różnica kształtu względem v124 do 5-8 dB, głównie na dole. Po konwersji krzywa velocity nie jest już krzywą silnika Ivory.
+
+
+## Bösendorfer 290 Imperial, Dynamics 95 (domyślnie 84), C2 i C4 (nowa metoda)
+Ten sam instrument co wyżej, tylko pokrętło Dynamics w Kontakcie podniesione z 84 do 95. RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Imperial dyn95 C2 | -73.5 | -64.5 | -44.2 | -29.0 | -20.5 | -12.9 | 9.1 | 35.4 | 8.6 | 7.6 | 60.6 |
+| Imperial dyn95 C4 | -74.9 | -65.9 | -45.6 | -31.6 | -21.8 | -13.8 | 9.1 | 34.2 | 9.8 | 8.0 | 61.2 |
+
+- Zakres v1-127 rośnie z ok. 45 do ok. 72 dB (v1 ok. -84 dB, praktycznie cisza).
+- Góra bez zmian: v127 tak samo (ok. -12,3 / -13,2 dB). Różnica względem Dynamics 84: v120 -0,2 dB, v90 -1,1, v64 -2,5, v40 -5,0, v20 -9,7, v10 -15,0, v5 -19,9, v1 -26,6 dB.
+- Różnica jest identyczna co do 0,01 dB w C2 i C4, a barwa (centroid) nie zmienia się wcale: pokrętło zmienia tylko wzmocnienie zależne od velocity, próbki i granice warstw zostają (spadki na granicach jak przy 84).
+- To nie jest liniowe przechylenie w dB jak w Galaxy (dopasowanie prostej: błąd 3 dB). Bliżej mu do potęgi velocity: różnica ok. 0,62 × 20·log10(v/127) dB (błąd ok. 0,9 dB). Wykładnik krzywej rośnie z ok. 0,9 do 1,7 w v1-40 i z ok. 2,0-2,3 do 2,5-2,8 w v41-127.
+- Dół robi się stromy: v2-12 po 1,4-3,1 dB na krok. Środek 0,7 dB na krok (przy 84: 0,55), góra 0,22 (przy 84: 0,19).
+- Odpowiedniki głośności: dyn95 v30 = dyn84 v18, v50 = v41, v64 = v54, v80 = v75, v100 = v96. Poniżej ok. v15 przy 95 jest ciszej niż cokolwiek przy 84. Krzywa routera nie zastąpi pokrętła 1:1, bo router zmienia też próbkę (warstwę), a pokrętło zostawia próbkę i ścisza tylko dźwięk.
