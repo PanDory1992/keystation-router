@@ -259,3 +259,16 @@ Bez wygładzania (powtórzenia ±0,1-0,2 dB). RMS ataku, dB.
 - Od v30 w górę prawie identyczny z VI Labs Modern U (różnica do ok. 1,5 dB). Różnią się tylko dołem: VI Labs schodzi o 10-19 dB niżej.
 - Oba Addictive Keys mają podobną podłogę (v1 ok. 34-37 dB pod v127), więc to raczej cecha silnika Addictive Keys niż próbek.
 - Poziom v127 ok. -18 do -21 dB.
+
+## UVI C7 Grand, Dynamics 100% (domyślnie 95%), C2 i C4
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| UVI C7 100% C2 | -60.8 | -51.2 | -34.0 | -23.8 | -17.0 | -12.0 | 9.6 | 27.4 | 6.8 | 4.9 | 48.7 |
+| UVI C7 100% C4 | -61.9 | -53.3 | -33.2 | -23.3 | -18.3 | -13.8 | 8.6 | 30.0 | 4.9 | 4.5 | 48.1 |
+
+- Zakres v5-124 prawie podwojony: ok. 48-49 dB zamiast 25 dB. Góra bez zmian (v124-127 identyczne), dół niżej: v10 o 14 dB, v5 o 23 dB, v1 o 47 dB (praktycznie cisza).
+- Jasność identyczna przy każdym velocity: te same próbki, inna głośność.
+- Zmiany przy każdym velocity są dokładnie takie same jak w True Keys przy Velocity Amount 95%->100% (do setnych części dB): ten sam silnik UVI, ta sama reguła (5% głośności zostaje przy 95%).
+- Od v10 w górę bez odwróceń w C2; w C4 bez zmian dwa małe (v36, v66).
+- Wniosek: 48 dB mieści 12 schodków po 4 dB.
