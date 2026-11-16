@@ -450,3 +450,18 @@ Bez wygładzania (powtórzenia ±0,4 dB). RMS ataku, dB.
 - Te same próbki (barwa identyczna co do herca). Gałka Dynamics to tylko pochylenie głośności, nie wybór warstw.
 - Piła zostaje: spadki v43 (-3,1 / -2,5 dB), v104 (-2,6 / -2,4 dB), v120 (-2,0 / -1,9 dB) prawie tej samej wielkości, 14-16 odwróceń.
 - Wniosek: każde +10% Dynamics dodaje ok. 4,4 dB zakresu (0,035 dB na krok velocity poniżej 127). Krzywą dla innego ustawienia można policzyć bez nowego pomiaru.
+
+## Piano in Blue, C2 i C4
+Bez wygładzania (powtórzenia ±0,2 dB). RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Piano in Blue C2 | -49.6 | -48.0 | -42.0 | -33.5 | -25.5 | -17.0 | 1.6 | 14.5 | 8.0 | 8.5 | 32.5 |
+| Piano in Blue C4 | -51.9 | -50.4 | -44.5 | -36.5 | -27.5 | -18.8 | 1.5 | 13.9 | 9.0 | 8.7 | 33.1 |
+
+- Prawie idealna prosta w dB: ok. 0,29 dB na krok w całym zakresie (v10-40: 0,29-0,31, v40-80: 0,29-0,31, v80-127: 0,24). Odchylenie od prostej 0,44-0,48 dB (drugi wynik po Ivory Modern Upright C2), zero odwróceń.
+- Zakres v1-127 ok. 34-35 dB. Góra nie jest płaska (v90-124 ok. 8,5 dB).
+- Warstwy słychać tylko w barwie (C2 ok. v51, 81, 91, 101, 121), głośność przechodzi przez nie gładko. Jedyne skoki: v2-3 ok. 2 dB ciszej niż v1 i v4, w C4 v71 +1,4 dB.
+- C2 i C4 prawie ten sam kształt (różnica średnio 0,8 dB, najwyżej 1,4 dB).
+- Poziom v127 ok. -16,5 / -18 dB (głośno).
+- Kształtem najbliżej Pianoteq (od v10: C2 średnio 0,0 dB różnicy, odchylenie 0,7 dB; C4 0,6 / 0,9 dB) i Ivory Modern Upright (C4 odchylenie 0,6 dB).
