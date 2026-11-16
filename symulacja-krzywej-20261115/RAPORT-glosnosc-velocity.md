@@ -604,3 +604,18 @@ Ustawienia domyślne. RMS ataku, dB.
 - Losowa zmienność między uderzeniami: ok. ±0,5 dB (odchylenie 0,4-0,5 dB od prostej w warstwie, bez okresu, więc losowe, nie kolejne próbki po kolei). Stąd sporo odwróceń o 1-1,9 dB w C2. Szumu tła nie ma (ogon czysty).
 - Barwa: najcichsza warstwa jest jaśniejsza od drugiej (C2 688 vs 628 Hz, C4 1369 vs 1320 Hz). Najwyższa warstwa w C4 jest o ok. 14% jaśniejsza od poprzedniej przy +3,6 dB, w C2 o ok. 8% przy +1,5 dB: na górze dynamika idzie bardziej w barwę niż w głośność.
 - C4 ok. 4,3 dB ciszej niż C2 (stała różnica, odchylenie 0,9 dB).
+
+
+## Echo Sound Works X Grand, C2 i C4 (nowa metoda)
+Ustawienia domyślne. RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| X Grand C2 | -41.0 | -40.5 | -38.7 | -36.2 | -30.4 | -25.5 | 0.5 | 4.3 | 5.8 | 4.9 | 15.5 |
+| X Grand C4 | -37.6 | -37.1 | -34.9 | -32.4 | -26.9 | -22.2 | 0.5 | 4.7 | 5.6 | 4.6 | 15.4 |
+
+- Najwęższy zakres z mierzonych: v1-127 ok. 16,8 dB (C2) i 17,2 dB (C4).
+- Bardzo gładko: ok. 0,08-0,1 dB na krok w v1-71, potem 0,1-0,2 dB na krok (krzywa lekko przyspiesza ku górze). Powtórzenia ±0,2 dB, zero odwróceń.
+- Jeden skok głośności: v72 +3,9 / +3,8 dB. Mały skok na v126: +0,4 / +1,2 dB.
+- Warstwy barwy (centroid) na v44, v58, v72, v102, v126 (w C2 też v30), ale bez skoków głośności poza v72: warstwy są wyrównane głośnością, zmienia się głównie barwa. Centroid rośnie ok. 2,1× w C2 (463 -> 991 Hz) i 1,8× w C4 (663 -> 1221 Hz).
+- C4 ok. 3,5 dB głośniej niż C2 (odwrotnie niż w Sunroom). v127 ok. -24,7 / -20,7 dB.
