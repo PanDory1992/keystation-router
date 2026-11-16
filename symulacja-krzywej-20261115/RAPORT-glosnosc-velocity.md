@@ -619,3 +619,74 @@ Ustawienia domyślne. RMS ataku, dB.
 - Jeden skok głośności: v72 +3,9 / +3,8 dB. Mały skok na v126: +0,4 / +1,2 dB.
 - Warstwy barwy (centroid) na v44, v58, v72, v102, v126 (w C2 też v30), ale bez skoków głośności poza v72: warstwy są wyrównane głośnością, zmienia się głównie barwa. Centroid rośnie ok. 2,1× w C2 (463 -> 991 Hz) i 1,8× w C4 (663 -> 1221 Hz).
 - C4 ok. 3,5 dB głośniej niż C2 (odwrotnie niż w Sunroom). v127 ok. -24,7 / -20,7 dB.
+
+
+## Podsumowanie wszystkich pomiarów (16.11.2026)
+35 instrumentów, 43 ustawienia, nuty C2 i C4, velocity 1-127. Liczby to RMS ataku. „Użyteczny zakres” liczę od v10 do v127, bo router i tak nie wysyła velocity niższej niż 6-15; to średnia z C2 i C4.
+
+### 1. Liczby w skrócie
+- Użyteczny zakres przy ustawieniach domyślnych (34 instrumenty): od 16 dB (X Grand) do 55 dB (Ivy), mediana ok. 30 dB.
+  - Tylko 9 instrumentów ma co najmniej 33 dB, a tyle trzeba na 11 stopni po 3 dB.
+  - 8 instrumentów ma mniej niż 25 dB.
+- Poziom przy v64, czyli przy tym samym dotyku: od ok. -52 dB (Ivy) i -50 dB (Claire) do -22 dB (UVI C7). Połowa instrumentów mieści się między -37 a -31 dB.
+- W środku zakresu (v10-60) jeden krok velocity to zwykle 0,25-0,35 dB.
+
+### 2. Rodziny kształtu
+| Rodzina | Jak się zachowuje | Instrumenty |
+|---|---|---|
+| Prosta w dB | ok. 0,3 dB na krok w całym zakresie, gładko | Pianoteq (oba presety), Rosewood, Piano in Blue, Estate, Roland, NOIRE, Ivory III (oba), Addictive Keys (oba), Grandeur, Claire, Keysuite Hybrid, Modern U |
+| Prosta ze szwami | jak wyżej, ale ze skokami 2-5 dB na granicach warstw | Keyscape C7, Bösendorfer V280, UVI Austrian, Imperial (Dynamics 84) |
+| Płaska góra | powyżej v90 tylko 3-5 dB, dynamikę na górze niesie barwa | Kawai EX, UVI C7, Keysuite Fazioli, True Keys, Ravenscroft, Walker, Berlin C2, Alicia C2 |
+| Warstwy | stała głośność w warstwie, skoki na granicach | Hammers and Waves (12 warstw), Silk (13 w C2), Sunroom (5), AIR C7 i Steinway D (6), X Grand (warstwy wyrównane, jeden skok na v72) |
+| Rozciągnięta pokrętłem | stromy dół, 45-60 dB | UVI C7 i Kawai EX z Dynamics 100%, True Keys z Amount 100%, Galaxy, Imperial z Dynamics 95, Ivy |
+
+### 3. Pokrętła dynamiki działają różnie
+- **Galaxy Dynamics:** równe przechylenie w dB. Dół idzie w dół, góra zostaje.
+- **Imperial Dynamics (Kontakt):** działa jak potęga velocity. Zmienia tylko wzmocnienie; próbki i granice warstw zostają te same.
+- **UVI Dynamics 100% i True Keys Amount 100%:** zakres rośnie mniej więcej dwukrotnie (UVI C7 z 25 do 49 dB, True Keys z 22 do 46 dB), a krzywa robi się wykładnicza.
+- **True Keys Sensitivity:** przesuwa krzywą, ale nie poszerza zakresu (zostaje 22 dB).
+- **Walker, domyślne 18 warstw:** działa jak kompresor (z 33-39 dB do 18-23 dB).
+- **Estate Velocity Smoothing:** przenika warstwy, głośność się nie zmienia.
+
+### 4. Jakość: gładkość, powtarzalność, zgodność C2 i C4
+**Najczystsze:**
+- Estate: powtórzenia ±0,04 dB.
+- Rosewood, Piano in Blue, Roland, Ivory III Modern Upright, Addictive Keys Modern Upright, NOIRE, Pianoteq.
+- AIR: czysty, choć warstwowy.
+- X Grand: gładki, ale wąski.
+
+**Kłopotliwe:**
+- Ivy: chaos poniżej v34 i dziura na v122.
+- Kawai EX z Dynamics 100%: wiele odwróceń.
+- Kawai EX domyślnie: round robin ±1,5 dB.
+- Walker: odwrócenia, zwłaszcza w C4.
+- Sunroom: losowe ±0,5 dB.
+- Berlin: C2 ma płaską górę, a C4 nie (kształt różni się o 9 dB); w C2 v100-116 jest za głośno, a v117 o 7 dB za cicho.
+- UVI Austrian: C2 i C4 różnią się kształtem o 7,5 dB.
+- Alicia C4: v92-99 ok. 3 dB za głośno.
+- Roland: v1 to cisza.
+
+**Rejestry:** C2 i C4 zwykle różnią się o mniej niż 3 dB. Najwięcej:
+- C4 głośniej: Ravenscroft +5,4 dB, Alicia +5,0 dB, Keyscape +4,5 dB;
+- C4 ciszej: Sunroom i Silk, po -4,2 dB.
+
+### 5. Wnioski do „Schodów”
+**Wspólna tabela.** Jedna tabela 11 stopni: v10, 19, 28, 38, 47, 59, 73, 84, 98, 112, 127.
+- 16 ustawień: błąd kroku do 1,5 dB.
+- 7 kolejnych ustawień: błąd do 2,5 dB.
+- W wąskich instrumentach (Silk, Walker domyślny, True Keys) same kroki mają tylko ok. 2 dB.
+
+**Własnej tabeli potrzebują:**
+- instrumenty warstwowe (AIR, Hammers and Waves, Sunroom, X Grand): stopnie w środkach warstw, tyle stopni, ile jest warstw;
+- Berlin, Ravenscroft, Modern U;
+- wszystkie ustawienia z pokrętłem dynamiki na maksimum.
+
+**Liczba stopni.** 11 stopni po co najmniej 3 dB zmieści tylko 9 z 34 instrumentów. Dla pozostałych są dwie drogi: mniej stopni (8-9) albo krok 2-2,5 dB.
+
+### 6. Największa różnica to poziom, nie krzywa
+Przy tym samym dotyku (v64) instrumenty różnią się o 30 dB, a bez Ivy i Claire o 24 dB. Kształt krzywej przy wspólnej tabeli myli się o najwyżej 1,5 dB na stopień. Po zmianie instrumentu ważniejsze jest więc wyrównanie głośności (wzmocnienie na instrument, np. pomiar LUFS w Uszach albo pokrętło Volume) niż osobna krzywa. Przykładowy cel: v64 przy medianie, ok. -34 dB.
+
+### 7. Ograniczenia
+- Tylko dwie nuty (C2 i C4), RMS z 0,3 s ataku, bez ważenia słuchu: ten sam poziom w C2 słychać ciszej niż w C4.
+- Pomiary sprzed 16.11 mają dołki przy v2-3 i v7 (błąd testu, do 2,3 dB). Od v10 wzwyż nie mają znaczenia.
+- Poziom wyjścia zależy od pokręteł Volume w instrumentach i jest stanem z dnia pomiaru.
