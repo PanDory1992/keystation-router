@@ -107,3 +107,17 @@ Bez wygładzania (powtórzenia ±0,5-0,7 dB). RMS ataku, dB.
 - Zakres od v9 do v127: ok. 27 dB w C2 i 32 dB w C4; razem z cichą warstwą v1-8 ok. 36 i 44 dB.
 - Poziom v127 ok. -16 dB, prawie jak Pianoteq.
 - Wniosek: najlżejsze uderzenia leżą tu na krawędzi urwiska. Różnica jednej wartości (v8 albo v9) to 7-12 dB, czyli więcej niż trzy schodki.
+
+## Ravenscroft 275, C2 i C4
+Bez wygładzania (powtórzenia ±0,3-0,4 dB). RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Ravenscroft C2 | -51.6 | -45.6 | -34.4 | -27.7 | -24.1 | -20.1 | 6.0 | 17.9 | 3.5 | 4.0 | 31.5 |
+| Ravenscroft C4 | -50.9 | -40.9 | -27.9 | -22.4 | -19.0 | -15.0 | 10.1 | 18.5 | 3.4 | 4.0 | 35.9 |
+
+- v1-2 to prawie cisza: ok. 16-25 dB ciszej niż v3 (RMS -81 dB w C2, -70 dB w C4). Grają dopiero od v3.
+- Stromy dół i płaska góra (mocniej niż Kawai EX): od v3 do v40 ok. 26-32 dB, a od v40 do v127 tylko ok. 13 dB. Między v60 i v90 tylko ok. 3,5 dB (0,12 dB na krok); mocniejsze granie słychać głównie jako jaśniejszą barwę.
+- Skoki: v19 (+4-5 dB) i v127 (+2 dB wobec v126).
+- Zakres v3-127 ok. 39-44 dB, poziom v127 ok. -13 do -18 dB (głośny, jak Pianoteq).
+- Wniosek do schodków: przy równych krokach w dB ok. 2/3 wartości wysyłanych przez router wypadnie poniżej v40. Bez schodków ta strefa (0,5 dB na krok) wzmacnia każdą niepewność ręki; schodki ją od ręki odcinają, więc tu dają najwięcej. Świadoma "jedynka" (v1) jest na Ravenscrofcie prawie niesłyszalna: w schodkach trzeba jej dać co najmniej v3.
