@@ -272,3 +272,16 @@ Bez wygładzania (powtórzenia ±0,1-0,2 dB). RMS ataku, dB.
 - Zmiany przy każdym velocity są dokładnie takie same jak w True Keys przy Velocity Amount 95%->100% (do setnych części dB): ten sam silnik UVI, ta sama reguła (5% głośności zostaje przy 95%).
 - Od v10 w górę bez odwróceń w C2; w C4 bez zmian dwa małe (v36, v66).
 - Wniosek: 48 dB mieści 12 schodków po 4 dB.
+
+## Kawai EX Pro, Dynamics 100% (domyślnie 95%), C2 i C4
+Bez wygładzania; Kawai ma powtórzenia ±1,7-1,9 dB (round robin), więc pojedyncze wartości mogą się różnić o tyle.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Kawai 100% C2 | -75.4 | -59.4 | -41.8 | -34.7 | -26.5 | -23.7 | 16.0 | 24.7 | 8.2 | 2.8 | 51.7 |
+| Kawai 100% C4 | -81.7 | -63.9 | -45.5 | -33.9 | -30.4 | -24.3 | 17.8 | 30.0 | 3.5 | 6.1 | 57.4 |
+
+- Zakres v5-124 z ok. 30-33 dB do ok. 52-57 dB. Dół niżej: v10 o ok. 13 dB, v5 o ok. 21-22 dB, v1 o ok. 44 dB. Od v60 w górę bez zmian (różnice w granicach powtórzeń).
+- Spadki przy każdym velocity mniejsze niż w UVI C7 i True Keys (np. v30: -2 dB zamiast -3,9 dB): ta sama gałka, ale inna krzywa próbek pod spodem.
+- Płaska góra została: od v60 do v124 nadal ok. 10-11 dB. Prawie cała nowa dynamika jest poniżej v40, jak w Ravenscrofcie.
+- Uwaga: ten sam podpis podłogi przy 95% tu nie był widoczny (v1 już ok. 42-48 dB pod v127), bo Kawai ma też ciche warstwy próbek.
