@@ -312,3 +312,18 @@ Bez wygładzania (powtórzenia ±0,1 dB). RMS ataku, dB.
 - C4 równie prosto (odchylenie 0,66 dB) z jedną wadą: v122 ok. 2,8 dB ciszej niż v121 (sam szczyt).
 - Zakres v1-127 ok. 36-38 dB; poziom v127 ok. -21 dB.
 - Podobnie jak Ivory German D (ok. 0,3 dB na krok), Ivory liczy głośność prawie jak prostą w dB. W C2 kształt obu zgadza się co do ok. 1,7 dB, ale w C4 German D jest bardziej stromy (ok. 42 dB zakresu wobec ok. 36 dB) i oba mają szwy w innych miejscach (v36 wobec v122), więc wspólna tabela byłaby tylko przybliżeniem.
+
+## Walker 1955 Concert D, C2 i C4
+Bez wygładzania; powtórzenia ok. ±0,6 dB (C2) i ±0,8 dB (C4), więc pojedyncze wartości skaczą w zygzak. RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Walker Concert D C2 | -67.3 | -64.8 | -55.9 | -47.6 | -37.7 | -34.1 | 2.5 | 17.2 | 9.9 | 3.6 | 33.2 |
+| Walker Concert D C4 | -72.5 | -69.7 | -58.1 | -45.1 | -36.6 | -33.1 | 2.8 | 24.6 | 8.5 | 3.5 | 39.4 |
+
+- Zakres v1-127 ok. 35 dB (C2) i 41 dB (C4), czyli jak Ivory German D. Dół nie jest płaski (v1-12 ok. 7-9 dB), więc nie ma podpisu podłogi.
+- Płaska góra: v90-124 tylko ok. 3,5 dB, v100-127 ok. 2 dB. W C2 do tego półka v40-60 (ok. 4,5 dB na 20 kroków) i szybszy odcinek v60-80 (ok. 8 dB).
+- Zygzak: w C4 v11-45 kolejne nuty na przemian ±1,5-4 dB (24 skoki powyżej 1,4 dB, 10 odwróceń). Odchylenie od prostej 1,8 dB (C2) i 2,9 dB (C4). Szum powtórzeń ok. 3 razy większy niż w Ivory, ok. 2,5 razy mniejszy niż w Kawai.
+- Poziom v127 ok. -33 do -34 dB: o ok. 11-15 dB ciszej niż Ivory czy Kawai na tym samym ustawieniu. Przy przełączaniu instrumentów trzeba to wyrównać suwakiem.
+- Najciemniejszy Steinway D z mierzonych: środek widma przy v127 ok. 900 Hz w C2 (Addictive ok. 1280, Pianoteq ok. 1420). Barwa rośnie dalej w v90-127 (C2 ok. 670 -> 900 Hz), choć głośność prawie stoi.
+- Porównanie z innymi Steinwayami D (C2, względem v124): v30 Walker -21,5, Addictive -20,0, True Keys 100% -18,0, Pianoteq -25,2; v90 Walker -3,5, Addictive -5,0, True Keys -4,0, Pianoteq -8,4. Walker najbliżej Addictive, tylko z większym szumem.
