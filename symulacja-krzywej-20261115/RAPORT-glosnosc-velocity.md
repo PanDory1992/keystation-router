@@ -535,3 +535,8 @@ Ustawienia ze zrzutu: Key Response ON (Strength ok. połowa, przełącznik krzyw
 - Poziom v127 ok. -20 / -22 dB.
 - To nie ta sama krzywa co Kawai EX Pro (w środku Estate ok. 2-3 dB niżej względem v124, dół dużo niżej, i bez powtórzeń ±1,9 dB).
 - Do sprawdzenia: czy Velocity Smoothing wygładza tylko przejścia między warstwami, czy uśrednia velocity kolejnych nut. Test rosnącą rampą tego nie rozróżni.
+
+### Estate Grand: Velocity Smoothing wyłączone (C2)
+- Głośność prawie bez zmian: różnica względem włączonego najwyżej ok. 1 dB (v40-75), średnio 0,18 dB; od v80 w górę identycznie. Powtórzenia nadal ±0,04 dB, zero odwróceń.
+- Zmienia się barwa: bez wygładzania są tylko 4 warstwy próbek (v1-31, v32-63, v64-95, v96-127) i barwa skacze na granicach (środek widma C2: ok. 380 -> 450 -> 950 -> 1090 Hz, przy v64 ponad dwa razy jaśniej z nuty na nutę). Z włączonym wygładzaniem te przejścia rozkładają się płynnie na ok. 20 wartości velocity wokół granic.
+- Wniosek: Velocity Smoothing to przenikanie między warstwami, a nie uśrednianie siły kolejnych nut (przy uśrednianiu ramka byłaby przesunięta na całej długości, a od v80 różnica jest zerowa). Bezpieczne do testu celowania; lepiej zostawić włączone.
