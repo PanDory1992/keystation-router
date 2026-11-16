@@ -190,3 +190,16 @@ Bez wygładzania (powtórzenia ±0,2-0,4 dB). RMS ataku, dB.
 - Zmienił się tylko środek: ciszej o 1,3 dB przy v10, o 3,6 dB przy v30, o 3,0 dB przy v60, o 1,5 dB przy v90. Góra jest przez to mniej płaska (v60-127: 11,6 dB zamiast 8,6 dB).
 - Jasność przy każdym velocity identyczna jak przy 40%: ta gałka nie zmienia wyboru próbek, tylko dokłada głośność według krzywej.
 - Wniosek: Vel. Sensitivity to po prostu krzywa velocity wewnątrz instrumentu. Router ze schodkami robi to samo, więc dla trybu Schody ustawienie tej gałki prawie nie ma znaczenia; zakresu (22-31 dB) nie poszerza.
+
+## True Keys American, Velocity Amount 100% (domyślnie 95%), Sensitivity 40%, C2 i C4
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| True Keys 100% C2 | -71.9 | -61.4 | -44.9 | -35.6 | -30.9 | -26.8 | 10.5 | 25.8 | 4.7 | 4.1 | 45.1 |
+| True Keys 100% C4 | -75.3 | -64.5 | -48.7 | -38.1 | -33.2 | -29.5 | 10.8 | 26.5 | 4.9 | 3.6 | 45.8 |
+
+- Zakres v5-124 podwojony: ok. 45 dB zamiast 22 dB. Góra bez zmian (v124-127 identyczne), zmienia się dół: v10 ciszej o 14 dB, v5 o 23 dB, v1 o 47 dB (v1 to teraz praktycznie cisza, ok. -97 dB).
+- Jasność przy każdym velocity identyczna: te same próbki, inna głośność.
+- Wyjaśnienie: przy 95% instrument zostawia 5% głośności nawet przy najsłabszym uderzeniu (20·log10(0,05) = -26 dB), stąd dawny zakres ok. 25-31 dB. Przy 100% ta podłoga znika.
+- Dół jest teraz bardzo stromy: v1-10 to ok. 1,5-10 dB na każdą wartość velocity. Bez schodków najsłabsze uderzenia będą skakać; ze schodkami router sam wybierze najcichszy słyszalny poziom.
+- Wniosek: ustawienie w instrumencie poszerzyło zakres tam, gdzie router nie mógł. 45 dB mieści 11-12 schodków po 4 dB.
