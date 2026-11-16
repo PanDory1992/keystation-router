@@ -93,3 +93,17 @@ Bez wygładzania (powtórzenia ±0,4 dB). RMS ataku, dB.
 - v1-12 brzmi tak samo (ok. -60 dB w C2, -57 dB w C4), a jest wyraźnie jaśniejsze niż v13-40 (1500-2100 Hz wobec 600-1300 Hz): w najcichszej warstwie słychać pewnie głównie mechanikę i szum, mniej tonu.
 - Zakres od v12 do v127 ok. 33 dB w obu rejestrach. Poziom v127 ok. -24 do -28 dB (jak NOIRE).
 - Wniosek do schodków: dla Keyscape progi routera muszą trafiać w warstwy instrumentu (13, 22, 31, 38), inaczej dwa schodki w różnych miejscach dają albo dwa progi o tej samej głośności, albo zbyt duży skok.
+
+## Pianoverse Bösendorfer V280 Black Diamond, C2 i C4
+Bez wygładzania (powtórzenia ±0,5-0,7 dB). RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Bösendorfer C2 | -51.4 | -43.1 | -36.0 | -30.0 | -23.7 | -17.2 | 8.3 | 13.2 | 6.2 | 6.6 | 34.3 |
+| Bösendorfer C4 | -58.2 | -47.0 | -39.0 | -29.9 | -23.2 | -16.2 | 11.2 | 17.1 | 6.7 | 7.0 | 42.0 |
+
+- Urwisko między v8 i v9: +7 dB w C2, +12 dB w C4. v1-8 to osobna, bardzo cicha warstwa (ok. -52 dB w C2, -60 dB w C4), w której głośność stoi.
+- Drugi skok przy v17 (ok. +3 dB). Od v17 w górę gładko: ok. 0,3 dB na krok do v60, potem ok. 0,2 dB na krok. Góra nie jest płaska, tylko łagodniejsza.
+- Zakres od v9 do v127: ok. 27 dB w C2 i 32 dB w C4; razem z cichą warstwą v1-8 ok. 36 i 44 dB.
+- Poziom v127 ok. -16 dB, prawie jak Pianoteq.
+- Wniosek: najlżejsze uderzenia leżą tu na krawędzi urwiska. Różnica jednej wartości (v8 albo v9) to 7-12 dB, czyli więcej niż trzy schodki.
