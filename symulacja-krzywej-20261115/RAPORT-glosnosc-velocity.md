@@ -299,3 +299,16 @@ Bez wygładzania (powtórzenia ±0,2-0,3 dB). RMS ataku, dB.
 - Wady: C2 v66 ok. 2,1 dB ciszej niż v65; C4 skok +3,6 dB przy v36 i +2,0 dB przy v111.
 - Poziom v127 ok. -18,7 dB w obu rejestrach (identycznie).
 - Wniosek: równe odstępy velocity dają tu prawie równe kroki w dB; schodki dla Ivory to prawie zwykły podział co ok. 13 wartości velocity (4 dB).
+
+## Ivory III Modern Upright, C2 i C4
+Bez wygładzania (powtórzenia ±0,1 dB). RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Ivory Upright C2 | -57.8 | -56.2 | -49.5 | -40.6 | -32.1 | -22.2 | 1.7 | 15.5 | 8.5 | 10.0 | 35.7 |
+| Ivory Upright C4 | -55.5 | -53.8 | -47.2 | -37.8 | -30.2 | -22.1 | 1.7 | 16.0 | 7.7 | 8.1 | 33.4 |
+
+- Najprostsza krzywa ze wszystkich pomiarów: w C2 ok. 0,29 dB na krok od v1 do v127 (także na samym dole), odchylenie od prostej tylko 0,34 dB, zero odwróceń. Powtórzenia ±0,1 dB.
+- C4 równie prosto (odchylenie 0,66 dB) z jedną wadą: v122 ok. 2,8 dB ciszej niż v121 (sam szczyt).
+- Zakres v1-127 ok. 36-38 dB; poziom v127 ok. -21 dB.
+- Podobnie jak Ivory German D (ok. 0,3 dB na krok), Ivory liczy głośność prawie jak prostą w dB. W C2 kształt obu zgadza się co do ok. 1,7 dB, ale w C4 German D jest bardziej stromy (ok. 42 dB zakresu wobec ok. 36 dB) i oba mają szwy w innych miejscach (v36 wobec v122), więc wspólna tabela byłaby tylko przybliżeniem.
