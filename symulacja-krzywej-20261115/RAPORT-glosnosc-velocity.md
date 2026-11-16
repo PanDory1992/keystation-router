@@ -588,3 +588,19 @@ Ten sam instrument co wyżej, tylko pokrętło Dynamics w Kontakcie podniesione 
 - To nie jest liniowe przechylenie w dB jak w Galaxy (dopasowanie prostej: błąd 3 dB). Bliżej mu do potęgi velocity: różnica ok. 0,62 × 20·log10(v/127) dB (błąd ok. 0,9 dB). Wykładnik krzywej rośnie z ok. 0,9 do 1,7 w v1-40 i z ok. 2,0-2,3 do 2,5-2,8 w v41-127.
 - Dół robi się stromy: v2-12 po 1,4-3,1 dB na krok. Środek 0,7 dB na krok (przy 84: 0,55), góra 0,22 (przy 84: 0,19).
 - Odpowiedniki głośności: dyn95 v30 = dyn84 v18, v50 = v41, v64 = v54, v80 = v75, v100 = v96. Poniżej ok. v15 przy 95 jest ciszej niż cokolwiek przy 84. Krzywa routera nie zastąpi pokrętła 1:1, bo router zmienia też próbkę (warstwę), a pokrętło zostawia próbkę i ścisza tylko dźwięk.
+
+
+## Sunroom Upright Piano (Conn), C2 i C4 (nowa metoda)
+Ustawienia domyślne. RMS ataku, dB.
+
+| | v5 | v10 | v30 | v60 | v90 | v124 | 5-10 | 10-60 | 60-90 | 90-124 | 5-124 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Sunroom C2 | -44.5 | -45.4 | -42.2 | -34.4 | -24.7 | -19.9 | -0.9 | 11.0 | 9.8 | 4.8 | 24.7 |
+| Sunroom C4 | -50.3 | -49.4 | -47.1 | -38.5 | -28.2 | -24.4 | 0.9 | 10.9 | 10.4 | 3.8 | 26.0 |
+
+- 5 warstw, te same granice w C2 i C4: v1-32, v33-61, v62-87, v88-111, v112-127.
+- Skoki na granicach: v33 +5,1 / +6,1 dB, v62 +4,9 / +5,9 dB, v88 +2,0 / +1,9 dB, v112 +1,5 / +3,6 dB (C2 / C4). W warstwie głośność rośnie tylko o 1-3,4 dB.
+- Wąski zakres: v1-127 ok. 26 dB (C2) i 27 dB (C4). Cicho: v127 ok. -19,8 / -23,3 dB, czyli 7-10 dB ciszej niż Imperial i Silk.
+- Losowa zmienność między uderzeniami: ok. ±0,5 dB (odchylenie 0,4-0,5 dB od prostej w warstwie, bez okresu, więc losowe, nie kolejne próbki po kolei). Stąd sporo odwróceń o 1-1,9 dB w C2. Szumu tła nie ma (ogon czysty).
+- Barwa: najcichsza warstwa jest jaśniejsza od drugiej (C2 688 vs 628 Hz, C4 1369 vs 1320 Hz). Najwyższa warstwa w C4 jest o ok. 14% jaśniejsza od poprzedniej przy +3,6 dB, w C2 o ok. 8% przy +1,5 dB: na górze dynamika idzie bardziej w barwę niż w głośność.
+- C4 ok. 4,3 dB ciszej niż C2 (stała różnica, odchylenie 0,9 dB).
