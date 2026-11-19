@@ -158,7 +158,9 @@ class MegaReader:
                     if self.off_flag is not None and self.off_flag.exists():
                         logging.info("Mega: port released (mega-off)")
                         break
-                    chunk = link.read(256)
+                    # 20.11: read(256) czekal na 256 bajtow albo pelny timeout (0,2 s): nuta spozniona do 200 ms.
+                    # read(1) wraca od razu po pierwszym bajcie, reszte bierzemy z bufora sterownika.
+                    chunk = link.read(max(1, link.in_waiting))
                     if not self.connected and time.time() - t_open > 8 + 20 * told:
                         told += 1          # diagnostyka co 20 s: co przychodzi, gdy skaner sie nie zglasza
                         logging.warning("Mega: no scanner on %s, %d bytes read, buffer %r, cts=%s dsr=%s",

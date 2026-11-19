@@ -165,3 +165,32 @@ def test_hires_on_puts_cc88_right_before_the_note():
     assert m.transform(m.mega_message("off", 60, 25000), exact=True) == [bytes((0x80, 60, 64))]
     b16 = m.transform([0xB0, 92, 40])
     assert b16 == [bytes((0xB0, 89, 40))] and destination(b16[0]) == PLAY
+
+
+def test_reader_passes_a_note_at_once(monkeypatch):
+    """Nuta z Megi nie moze czekac na timeout portu (blad z 20.11: do 200 ms opoznienia)."""
+    import os
+    import pty
+    import threading
+    import time
+    import tty
+    master, slave = pty.openpty()
+    tty.setraw(slave)
+    monkeypatch.setattr(mega_input, "find_port", lambda: os.ttyname(slave))
+    got = []
+    done = threading.Event()
+    r = mega_input.MegaReader(lambda *e: got.append((e, time.perf_counter())), lambda on: None, done)
+    th = threading.Thread(target=r.run, daemon=True)
+    th.start()
+    time.sleep(0.4)
+    os.write(master, b"H 27000 72\r\n")
+    time.sleep(0.4)
+    t0 = time.perf_counter()
+    os.write(master, b"+ 60 6500\r\n")
+    for _ in range(200):
+        if got:
+            break
+        time.sleep(0.002)
+    done.set()
+    th.join(2)
+    assert got and got[0][1] - t0 < 0.05
