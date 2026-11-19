@@ -1,0 +1,686 @@
+{
+ "width": 1920,
+ "height": 1920,
+ "backgrounds": {
+  "on_a37": "KEY_DEF_A37",
+  "on_a38": "KEY_A38",
+  "on_none": "KEY_AOFF",
+  "off_a37": "KEY_GASZ_A37",
+  "off_a38": "KEY_GASZ_A38",
+  "off_none": "KEY_GASZ_EMPTY"
+ },
+ "lcd": [
+  957,
+  128,
+  1531,
+  443
+ ],
+ "screen": [
+  960,
+  1104,
+  1837,
+  1752
+ ],
+ "knob_r": 37,
+ "fader_track": {
+  "top": 600,
+  "bottom": 920
+ },
+ "button_size": [
+  62,
+  52
+ ],
+ "screen_button": [
+  608,
+  1152,
+  60
+ ],
+ "jacks": {
+  "A38": [
+   296,
+   1816
+  ],
+  "A37": [
+   436,
+   1816
+  ],
+  "A36": [
+   576,
+   1816
+  ]
+ },
+ "jack_r": 46,
+ "snapshot": [
+  1740,
+  497
+ ],
+ "snapshot_keys": [
+  [
+   1632,
+   444
+  ],
+  [
+   1844,
+   444
+  ]
+ ],
+ "snapshot_key_size": [
+  62,
+  54
+ ],
+ "group_names": {
+  "charakter": "Charakter (Pianoteq)",
+  "mechanika": "Mechanika (Pianoteq)",
+  "przestrzen": "Przestrzeń (Pianoteq)",
+  "router": "Router",
+  "mikser": "Mikser Studio One",
+  "pedal": "Router: pedał i czucie",
+  "studio": "Studio One",
+  "trener": "Pilot Trenera",
+  "wolny": "Wolny"
+ },
+ "knobs": [
+  {
+   "id": "B26",
+   "x": 64.0,
+   "y": 598,
+   "short": "Szerokość",
+   "long": "Szerokość stereo",
+   "group": "przestrzen"
+  },
+  {
+   "id": "B27",
+   "x": 174.7,
+   "y": 598,
+   "short": "Sala",
+   "long": "Wielkość sali (pogłos)",
+   "group": "przestrzen"
+  },
+  {
+   "id": "B28",
+   "x": 285.4,
+   "y": 598,
+   "short": "Barwa sali",
+   "long": "Barwa pogłosu",
+   "group": "przestrzen"
+  },
+  {
+   "id": "B29",
+   "x": 396.1,
+   "y": 598,
+   "short": "Odbicia",
+   "long": "Wczesne odbicia",
+   "group": "przestrzen"
+  },
+  {
+   "id": "B30",
+   "x": 506.8,
+   "y": 598,
+   "short": "Duplex",
+   "long": "Blask góry (duplex)",
+   "group": "przestrzen"
+  },
+  {
+   "id": "B31",
+   "x": 617.5,
+   "y": 598,
+   "short": "Una corda",
+   "long": "Siła una cordy (przycisk B48)",
+   "group": "przestrzen"
+  },
+  {
+   "id": "B32",
+   "x": 728.2,
+   "y": 598,
+   "short": "Metal ff",
+   "long": "Metaliczny blask w fortissimo",
+   "group": "przestrzen"
+  },
+  {
+   "id": "B33",
+   "x": 838.9,
+   "y": 598,
+   "short": "Głośność",
+   "long": "Głośność instrumentu",
+   "group": "przestrzen"
+  },
+  {
+   "id": "B18",
+   "x": 64.0,
+   "y": 727,
+   "short": "Młotki",
+   "long": "Odgłos młotków",
+   "group": "mechanika"
+  },
+  {
+   "id": "B19",
+   "x": 174.7,
+   "y": 727,
+   "short": "Pedał",
+   "long": "Odgłos pedału",
+   "group": "mechanika"
+  },
+  {
+   "id": "B20",
+   "x": 285.4,
+   "y": 727,
+   "short": "Puszczenie",
+   "long": "Odgłos puszczenia klawisza",
+   "group": "mechanika"
+  },
+  {
+   "id": "B21",
+   "x": 396.1,
+   "y": 727,
+   "short": "Tłumiki",
+   "long": "Odgłos tłumików",
+   "group": "mechanika"
+  },
+  {
+   "id": "B22",
+   "x": 506.8,
+   "y": 727,
+   "short": "Wybrzmienie",
+   "long": "Wybrzmienie po puszczeniu klawisza",
+   "group": "mechanika"
+  },
+  {
+   "id": "B23",
+   "x": 617.5,
+   "y": 727,
+   "short": "Zużycie",
+   "long": "Zużycie instrumentu",
+   "group": "mechanika"
+  },
+  {
+   "id": "B24",
+   "x": 728.2,
+   "y": 727,
+   "short": "Rozstrojenie",
+   "long": "Rozstrojenie strun",
+   "group": "mechanika"
+  },
+  {
+   "id": "B25",
+   "x": 838.9,
+   "y": 727,
+   "short": "Bezpośredni",
+   "long": "Dźwięk bezpośredni (bliskość mikrofonów)",
+   "group": "mechanika"
+  },
+  {
+   "id": "B10",
+   "x": 64.0,
+   "y": 858,
+   "short": "Barwa",
+   "long": "Barwa: w lewo ciemno, w prawo jasno",
+   "group": "charakter"
+  },
+  {
+   "id": "B11",
+   "x": 174.7,
+   "y": 858,
+   "short": "Atak",
+   "long": "Atak młotka: w lewo miękko, w prawo twardo",
+   "group": "charakter"
+  },
+  {
+   "id": "B12",
+   "x": 285.4,
+   "y": 858,
+   "short": "Dynamika",
+   "long": "Zakres dynamiki instrumentu (w prawo łatwiej o ff)",
+   "group": "charakter"
+  },
+  {
+   "id": "B13",
+   "x": 396.1,
+   "y": 858,
+   "short": "Czułość",
+   "long": "Czułość dotyku w Pianotequ",
+   "group": "charakter"
+  },
+  {
+   "id": "B14",
+   "x": 506.8,
+   "y": 858,
+   "short": "Rezonans",
+   "long": "Rezonans strun (współbrzmienie)",
+   "group": "charakter"
+  },
+  {
+   "id": "B15",
+   "x": 617.5,
+   "y": 858,
+   "short": "Klapa",
+   "long": "Klapa: w lewo zamknięta, w prawo otwarta",
+   "group": "charakter"
+  },
+  {
+   "id": "B16",
+   "x": 728.2,
+   "y": 858,
+   "short": "Pogłos",
+   "long": "Pogłos: ilość (działa w presetach z włączonym Reverb)",
+   "group": "charakter"
+  },
+  {
+   "id": "B17",
+   "x": 838.9,
+   "y": 858,
+   "short": "Półpedał",
+   "long": "Głębokość półpedału w routerze (gdy półpedał jest włączony)",
+   "group": "router"
+  }
+ ],
+ "faders": [
+  {
+   "id": "C1",
+   "x": 954.0,
+   "short": "Kanał 1",
+   "long": "Głośność pierwszego kanału w mikserze Studio One (twoje pianino). Do oporu w górę = dokładnie 0 dB.",
+   "group": "mikser"
+  },
+  {
+   "id": "C2",
+   "x": 1063.8,
+   "short": "Kanał 2",
+   "long": "Głośność wybranego kanału Studio One (nazwa nad suwakiem). Kliknij nazwę, żeby wybrać inny kanał, albo: zaznacz kanał w Studio One, C54, rusz suwakiem. Do oporu w górę = dokładnie 0 dB.",
+   "group": "mikser"
+  },
+  {
+   "id": "C3",
+   "x": 1173.6,
+   "short": "Kanał 3",
+   "long": "Głośność wybranego kanału Studio One (nazwa nad suwakiem). Kliknij nazwę, żeby wybrać inny kanał, albo: zaznacz kanał w Studio One, C54, rusz suwakiem. Do oporu w górę = dokładnie 0 dB.",
+   "group": "mikser"
+  },
+  {
+   "id": "C4",
+   "x": 1283.4,
+   "short": "Kanał 4",
+   "long": "Głośność wybranego kanału Studio One (nazwa nad suwakiem). Kliknij nazwę, żeby wybrać inny kanał, albo: zaznacz kanał w Studio One, C54, rusz suwakiem. Do oporu w górę = dokładnie 0 dB.",
+   "group": "mikser"
+  },
+  {
+   "id": "C5",
+   "x": 1393.2,
+   "short": "Kanał 5",
+   "long": "Głośność wybranego kanału Studio One (nazwa nad suwakiem). Kliknij nazwę, żeby wybrać inny kanał, albo: zaznacz kanał w Studio One, C54, rusz suwakiem. Do oporu w górę = dokładnie 0 dB.",
+   "group": "mikser"
+  },
+  {
+   "id": "C6",
+   "x": 1503.0,
+   "short": "Kanał 6",
+   "long": "Głośność wybranego kanału Studio One (nazwa nad suwakiem). Kliknij nazwę, żeby wybrać inny kanał, albo: zaznacz kanał w Studio One, C54, rusz suwakiem. Do oporu w górę = dokładnie 0 dB.",
+   "group": "mikser"
+  },
+  {
+   "id": "C7",
+   "x": 1612.8,
+   "short": "Kanał 7",
+   "long": "Głośność wybranego kanału Studio One (nazwa nad suwakiem). Kliknij nazwę, żeby wybrać inny kanał, albo: zaznacz kanał w Studio One, C54, rusz suwakiem. Do oporu w górę = dokładnie 0 dB.",
+   "group": "mikser"
+  },
+  {
+   "id": "C8",
+   "x": 1722.6,
+   "short": "Kanał 8",
+   "long": "Głośność wybranego kanału Studio One (nazwa nad suwakiem). Kliknij nazwę, żeby wybrać inny kanał, albo: zaznacz kanał w Studio One, C54, rusz suwakiem. Do oporu w górę = dokładnie 0 dB.",
+   "group": "mikser"
+  },
+  {
+   "id": "C9",
+   "x": 1832.4,
+   "short": "MAIN",
+   "long": "Głośność Main w Studio One. Do oporu w górę = dokładnie 0 dB.",
+   "group": "mikser"
+  }
+ ],
+ "buttons": [
+  {
+   "id": "B44",
+   "x": 64.0,
+   "y": 990,
+   "short": "Uzbrój",
+   "long": "Uzbrój zaznaczoną ścieżkę do nagrania (Studio One)",
+   "group": "studio"
+  },
+  {
+   "id": "B45",
+   "x": 174.7,
+   "y": 990,
+   "short": "Odsłuch",
+   "long": "Odsłuch zaznaczonej ścieżki (Studio One)",
+   "group": "studio"
+  },
+  {
+   "id": "B46",
+   "x": 285.4,
+   "y": 990,
+   "short": "Sustain",
+   "long": "Pedał działa jako sustain",
+   "group": "pedal"
+  },
+  {
+   "id": "B47",
+   "x": 396.1,
+   "y": 990,
+   "short": "Sostenuto",
+   "long": "Pedał działa jako sostenuto (drugi raz = z powrotem sustain)",
+   "group": "pedal"
+  },
+  {
+   "id": "B48",
+   "x": 506.8,
+   "y": 990,
+   "short": "Una corda",
+   "long": "Una corda włącz / wyłącz (siła: pokrętło B31)",
+   "group": "pedal"
+  },
+  {
+   "id": "B49",
+   "x": 617.5,
+   "y": 990,
+   "short": "Metronom",
+   "long": "Metronom w Studio One",
+   "group": "studio"
+  },
+  {
+   "id": "B50",
+   "x": 728.2,
+   "y": 990,
+   "short": "Cofnij",
+   "long": "Cofnij ostatnią zmianę w Studio One",
+   "group": "studio"
+  },
+  {
+   "id": "B51",
+   "x": 838.9,
+   "y": 990,
+   "short": "Zapisz",
+   "long": "Zapisz projekt Studio One",
+   "group": "studio"
+  },
+  {
+   "id": "C52",
+   "x": 954.0,
+   "y": 990,
+   "short": "Słuchawki",
+   "long": "Słuchawki ↔ głośniki (Listen Bus w Studio One)",
+   "group": "studio"
+  },
+  {
+   "id": "C53",
+   "x": 1063.8,
+   "y": 990,
+   "short": "Czucie",
+   "long": "Czucie klawiatury po kolei: Light → Acoustic → Heavy → Moje → Moje 3",
+   "group": "pedal"
+  },
+  {
+   "id": "C54",
+   "x": 1173.6,
+   "y": 990,
+   "short": "Przypisz",
+   "long": "Przypisanie suwaka: zaznacz kanał w Studio One, wciśnij C54 i w ciągu 10 sekund rusz suwakiem C2–C8. Ten suwak będzie odtąd sterował tym kanałem.",
+   "group": "wolny"
+  },
+  {
+   "id": "C55",
+   "x": 1283.4,
+   "y": 990,
+   "short": "wolny",
+   "long": "Wolny przycisk (router go połyka)",
+   "group": "wolny"
+  },
+  {
+   "id": "C56",
+   "x": 1393.2,
+   "y": 990,
+   "short": "Start",
+   "long": "Trener: start / dalej",
+   "group": "trener"
+  },
+  {
+   "id": "C57",
+   "x": 1503.0,
+   "y": 990,
+   "short": "Powtórz",
+   "long": "Trener: powtórz",
+   "group": "trener"
+  },
+  {
+   "id": "C58",
+   "x": 1612.8,
+   "y": 990,
+   "short": "Podpowiedź",
+   "long": "Trener: podpowiedź (i szczegóły wyniku)",
+   "group": "trener"
+  },
+  {
+   "id": "C59",
+   "x": 1722.6,
+   "y": 990,
+   "short": "Pauza",
+   "long": "Trener: pauza",
+   "group": "trener"
+  },
+  {
+   "id": "C60",
+   "x": 1832.4,
+   "y": 990,
+   "short": "Koniec",
+   "long": "Trener: koniec",
+   "group": "trener"
+  }
+ ],
+ "minikeys": {
+  "white": [
+   86,
+   101,
+   115,
+   130,
+   144,
+   159,
+   173,
+   187,
+   202,
+   216,
+   231,
+   245,
+   260,
+   274,
+   289,
+   303,
+   318,
+   332,
+   347,
+   361,
+   376,
+   390,
+   405,
+   419,
+   434,
+   448,
+   463,
+   477,
+   492,
+   506,
+   521,
+   535,
+   550,
+   564,
+   579,
+   593,
+   608,
+   622,
+   637,
+   651,
+   666,
+   681,
+   695,
+   710,
+   724,
+   739,
+   754,
+   768,
+   783,
+   797,
+   812,
+   827,
+   843
+  ],
+  "black": [
+   [
+    100,
+    108
+   ],
+   [
+    126,
+    134
+   ],
+   [
+    143,
+    151
+   ],
+   [
+    168,
+    177
+   ],
+   [
+    186,
+    193
+   ],
+   [
+    202,
+    210
+   ],
+   [
+    228,
+    235
+   ],
+   [
+    245,
+    252
+   ],
+   [
+    269,
+    277
+   ],
+   [
+    285,
+    294
+   ],
+   [
+    302,
+    310
+   ],
+   [
+    327,
+    336
+   ],
+   [
+    344,
+    353
+   ],
+   [
+    370,
+    378
+   ],
+   [
+    386,
+    395
+   ],
+   [
+    403,
+    411
+   ],
+   [
+    428,
+    437
+   ],
+   [
+    445,
+    454
+   ],
+   [
+    471,
+    479
+   ],
+   [
+    487,
+    496
+   ],
+   [
+    504,
+    512
+   ],
+   [
+    529,
+    538
+   ],
+   [
+    546,
+    555
+   ],
+   [
+    572,
+    579
+   ],
+   [
+    588,
+    597
+   ],
+   [
+    605,
+    612
+   ],
+   [
+    631,
+    638
+   ],
+   [
+    648,
+    655
+   ],
+   [
+    673,
+    682
+   ],
+   [
+    690,
+    699
+   ],
+   [
+    707,
+    714
+   ],
+   [
+    732,
+    741
+   ],
+   [
+    749,
+    757
+   ],
+   [
+    775,
+    783
+   ],
+   [
+    792,
+    800
+   ],
+   [
+    808,
+    817
+   ]
+  ],
+  "top": 1384,
+  "black_bottom": 1439,
+  "bottom": 1465,
+  "note": "the small drawing of the 88 keys: white = 53 boundaries (A0..C8), black = 36 [x0,x1], measured on the backgrounds (same in all six)"
+ }
+}

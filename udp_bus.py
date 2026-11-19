@@ -92,9 +92,12 @@ class UdpBus:
                 # the listener is gone, expiry removes it.
                 self.dropped += 1
 
-    def note(self, on: bool, note: int, raw: int, vel: int, ch: int = 0, src: str = "keys"):
-        self.publish({"t": "note", "on": on, "note": note, "raw": raw, "vel": vel,
-                      "ch": ch, "src": src, "ts": round(self.clock(), 4)})
+    def note(self, on: bool, note: int, raw: int, vel: int, ch: int = 0, src: str = "keys", us: int | None = None):
+        event = {"t": "note", "on": on, "note": note, "raw": raw, "vel": vel,
+                 "ch": ch, "src": src, "ts": round(self.clock(), 4)}
+        if us is not None:          # 20.11: klawisz z Megi: czas miedzy stykami w us
+            event["us"] = us
+        self.publish(event)
 
     def pedal(self, pedal: str, cc: int, value: int):
         self.publish({"t": "pedal", "pedal": pedal, "cc": cc, "value": value,

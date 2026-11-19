@@ -911,6 +911,14 @@ def run():
             "touch": mapper.touch_mode,
             "ones": "context" if mapper.ones_context else "ppp",
             "last": dict(live_last) or None,
+            "mega": {          # 20.11: klawisze z Megi i krzywa fortepianu (wtyczka Keystation Status)
+                "connected": mapper.mega_active,
+                "curve": mapper.mega_settings["krzywa"],
+                "curves": mapper.mega_settings["krzywe"],
+                "black": mapper.mega_settings.get("czarne_mnoznik", 1.0),
+                "minimum": mapper.mega_settings.get("minimum", 1),
+                "hires": bool(mapper.mega_settings.get("wysoka_rozdzielczosc")),
+            },
             "controls": dict(live_controls),
             "button": dict(live_button) or None,
             "reading": round(max(0.0, read_controls[0] - time.time()), 1),
@@ -1017,6 +1025,16 @@ def run():
                 value = None
             if value is not None:
                 mapper.release_ms = value
+        curve = want.get("mega_curve")
+        if isinstance(curve, str) and curve in mapper.mega_settings["krzywe"]:
+            with io_lock:
+                mapper.mega_settings["krzywa"] = curve
+                mapper.mega_dirty = True
+        hires = want.get("mega_hires")
+        if isinstance(hires, bool):
+            with io_lock:
+                mapper.mega_settings["wysoka_rozdzielczosc"] = hires
+                mapper.mega_dirty = True
         ones = want.get("ones")
         if ones in ("context", "ppp"):
             try:
@@ -1206,6 +1224,7 @@ def run():
             if mapper.last_event is None and len(message) >= 3 and message[0] & 0xF0 == 0x90 and message[2] > 0:
                 out = next((p[2] for d, p in routed if p[0] & 0xF0 == 0x90 and len(p) >= 3), message[2])
                 live_last.update(note=message[1], raw=message[2], out=out)
+                live_last.pop("us", None)
             live_event.set()
             if DEBUG_FILE.exists() and message and message[0] & 0xF0 in (0xB0, 0xC0, 0xD0):
                 logging.info("RAW %s -> %s", bytes(message).hex(" "),
@@ -1231,10 +1250,12 @@ def run():
             routed = dispatch(message, exact=True)
             now = time.time()
             capture_mega(kind, note, us, routed)
-            if mapper.last_event is None:
-                publish_bus(message, routed)
+            bus = bus_ref[0]
+            if mapper.last_event is None and bus is not None and bus.subs:
+                vel = message[2] if kind == "on" else 0
+                bus.note(kind == "on", note, vel, vel, 0, us=us)
             if kind == "on" and mapper.last_event is None:
-                live_last.update(note=note, raw=message[2], out=message[2])
+                live_last.update(note=note, raw=message[2], out=message[2], us=us)
             live_event.set()
             messages += 1
             last_input = now
