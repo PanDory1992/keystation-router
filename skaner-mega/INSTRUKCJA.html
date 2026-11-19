@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skaner Mega</title>
+<style>
+  :root { --ink:#1d1d1b; --mut:#5e5d58; --bg:#faf9f6; --card:#fff; --line:#dcdad3; --acc:#1f5fa8; --warn:#a33a1a;
+          --a:#c0392b; --b:#1f7a4d; --c:#7a3fb0; --d:#b7791f; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 system-ui, "Segoe UI", sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 28px; margin: 0 0 4px; }
+  h2 { font-size: 20px; margin: 32px 0 8px; }
+  p.lead { color: var(--mut); margin: 0 0 16px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; margin: 12px 0; }
+  .warn { border-left: 4px solid var(--warn); }
+  ol li, ul li { margin: 4px 0; }
+  code, kbd { background: #efede7; border-radius: 4px; padding: 1px 5px; font-family: Consolas, monospace; font-size: 14px; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; }
+  td, th { border-bottom: 1px solid var(--line); padding: 6px 8px; text-align: left; }
+  svg { width: 100%; height: auto; display: block; }
+  .tag { display:inline-block; min-width: 22px; padding: 0 6px; border-radius: 4px; color:#fff; font-weight:600; font-size: 13px; text-align:center; }
+</style>
+</head>
+<body>
+<main>
+<h1>Skaner Mega</h1>
+<p class="lead">Klawisze Keystation czytane przez Arduino Mega zamiast starego chipa. Ten folder zawiera wszystko: programy dla Megi, wgrywanie jednym kliknięciem i rozpoznanie matrycy. Arduino IDE nie jest potrzebne.</p>
+
+<h2>Krok 1. Test samej Megi (5 min, klawiatury nie ruszasz)</h2>
+<div class="card">
+<ol>
+  <li>Podłącz Megę kablem USB prosto do komputera (port z tyłu obudowy). Zaświeci się zielona dioda <b>ON</b>.</li>
+  <li>Kliknij dwa razy <code>1 - Test Megi.bat</code>.</li>
+  <li>Program sam znajdzie Megę, wgra test i sprawdzi łączność. Na końcu ma być napis <b>MEGA DZIAŁA</b>, a dioda <b>L</b> na płytce mruga.</li>
+  <li>Jeśli Windows nie widzi Megi, program napisze dlaczego (najczęściej kabel tylko do ładowania albo brak sterownika CH340). Wtedy napisz do Claude.</li>
+</ol>
+</div>
+
+<h2>Krok 2. Przygotowanie klawiatury (20 min)</h2>
+<div class="card">
+<ol>
+  <li>Odłącz USB Keystation i USB Megi.</li>
+  <li>Zrób zdjęcie każdej z 4 wtyczek na zielonej płytce. Oznacz je taśmą: <span class="tag" style="background:var(--a)">W</span> <span class="tag" style="background:var(--b)">X</span> <span class="tag" style="background:var(--c)">Y</span> (wtyczki 10-pinowe) i <span class="tag" style="background:var(--d)">Z</span> (8-pinowa). Kolejność W, X, Y jest dowolna, ważne, żeby była zapisana.</li>
+  <li>Na każdej wtyczce zaznacz <b>pin 1</b>: strona z czerwonym paskiem na taśmie.</li>
+  <li>Zdejmij wtyczki: przytrzymaj płytkę, ciągnij za plastik, lekko kołysząc. Przylutowanego kabla do brązowej płyty nie ruszaj.</li>
+  <li>Megę połóż na tekturze albo piance, nigdy na metalowej ramie.</li>
+</ol>
+</div>
+
+<h2>Krok 3. Wpinanie</h2>
+<div class="card">
+<p>Od taśmy kabelków męsko-męskich oderwij paski: 10, 10, 10 i 8 przewodów. W każdym pasku <b>przewód 1</b> to skrajny przewód, który wkładasz w <b>pin 1</b> wtyczki (czerwony pasek), potem kolejne po kolei. Drugie końce idą do Megi tak:</p>
+<table>
+  <tr><th>Wtyczka</th><th>Przewody</th><th>Piny Megi</th></tr>
+  <tr><td><span class="tag" style="background:var(--a)">W</span></td><td>1–10</td><td>22, 23, 24 … 31</td></tr>
+  <tr><td><span class="tag" style="background:var(--b)">X</span></td><td>1–10</td><td>32, 33, 34 … 41</td></tr>
+  <tr><td><span class="tag" style="background:var(--c)">Y</span></td><td>1–10</td><td>42, 43, 44 … 51</td></tr>
+  <tr><td><span class="tag" style="background:var(--d)">Z</span></td><td>1–8</td><td>A0, A1 … A7 (rząd ANALOG IN)</td></tr>
+</table>
+<p>Piny 22–53 leżą w <b>podwójnym rzędzie</b> na krótkim boku płytki. Numery idą zygzakiem między rzędami: 22 w jednym rzędzie, 23 naprzeciwko w drugim, potem 24 i 25 i tak dalej. Dlatego pasek 10 przewodów zajmuje 5 kolumn po 2 gniazda:</p>
+<svg viewBox="0 0 900 250" role="img" aria-label="Podwójny rząd pinów Megi 22–53 z przypisaniem przewodów">
+  <defs><style>
+    .hole{fill:#2b2b2b} .num{font:600 13px Consolas,monospace; fill:#1d1d1b; text-anchor:middle}
+    .lbl{font:700 12px system-ui; fill:#fff; text-anchor:middle} .cap{font:14px system-ui; fill:#5e5d58}
+    .bad{font:700 12px system-ui; fill:#a33a1a; text-anchor:middle}
+  </style></defs>
+  <text x="10" y="20" class="cap">Podwójny rząd na końcu Megi (widok z góry; napis „5V” po jednej stronie, „GND” po drugiej)</text>
+  <g id="hdr"></g>
+  <text x="10" y="236" class="cap">Liczby to numery nadrukowane obok gniazd. Kółko to przewód: W3 = wtyczka W, przewód 3.</text>
+</svg>
+
+<p>Litery wtyczek to W, X, Y, Z, a nie A–D, żeby nie myliły się z pinami A0–A7 na Medze.</p>
+<p style="margin-top:18px">Wtyczka <span class="tag" style="background:var(--d)">Z</span> idzie do rzędu <b>ANALOG IN</b>, gniazda A0–A7:</p>
+<svg viewBox="0 0 900 120" role="img" aria-label="Rząd ANALOG IN, piny A0–A7 z przewodami Z1–Z8">
+  <g id="ana"></g>
+</svg>
+
+<div class="card warn">
+<b>Nie wpinaj nic</b> w gniazda 5V, GND, 3.3V, VIN, RESET, AREF ani w piny 0 i 1 (RX0/TX0). Pierwsza para podwójnego rzędu to 5V, ostatnia to GND: zostają puste.
+</div>
+<p>Zrób zdjęcie z góry i wyślij Claude do sprawdzenia, zanim podłączysz USB.</p>
+</div>
+
+<h2>Krok 4. Rozpoznanie matrycy (20 min)</h2>
+<div class="card">
+<ol>
+  <li>Podłącz Megę (USB Keystation może być podłączone albo nie, nie ma znaczenia).</li>
+  <li>Kliknij dwa razy <code>2 - Rozpoznanie matrycy.bat</code>. Program wgra rozpoznanie i sam znajdzie przewody, które w klawiaturze są połączone na stałe.</li>
+  <li>Potem prowadzi przez wszystkie 88 klawiszy od lewej: <i>„Naciśnij powoli i puść: A0”</i>. Naciskasz <b>powoli do dna</b> i puszczasz. Po każdym klawiszu pojawia się <b>OK</b>.</li>
+  <li>Jeśli napisze „jeszcze raz, wolniej”, naciśnij jeszcze raz wolniej. Klawisze komputera: <kbd>P</kbd> wraca do poprzedniego klawisza, <kbd>N</kbd> pomija, <kbd>K</kbd> kończy i zapisuje.</li>
+  <li>Wynik zapisuje się sam w folderze <code>wyniki</code>. Napisz Claude, że gotowe: przygotuje właściwy skaner.</li>
+</ol>
+<p><b>Bezpieczeństwo:</b> program nigdy nie wystawia 5 V na przewody klawiatury, tylko na chwilę ściąga jeden przewód do masy. Pomyłka we wpinaniu niczego nie uszkodzi, najwyżej wyjdzie w wyniku.</p>
+</div>
+
+<h2>Powrót do starego stanu</h2>
+<div class="card">
+<p>Odłącz kabelki od wtyczek i włóż 4 wtyczki z powrotem na zieloną płytkę według zdjęć i oznaczeń (pin 1 do pinu 1). Keystation działa jak przedtem.</p>
+</div>
+</main>
+<script>
+(function () {
+  const C = { A: getComputedStyle(document.documentElement).getPropertyValue('--a'),
+              B: getComputedStyle(document.documentElement).getPropertyValue('--b'),
+              C: getComputedStyle(document.documentElement).getPropertyValue('--c'),
+              D: getComputedStyle(document.documentElement).getPropertyValue('--d') };
+  const NS = 'http://www.w3.org/2000/svg';
+  const mk = (tag, attrs, text) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; return e; };
+  const hdr = document.getElementById('hdr');
+  const x0 = 40, dx = 46, yTop = 70, yBot = 160;
+  const cols = [['5V', '5V']];
+  for (let p = 22; p <= 52; p += 2) cols.push([String(p), String(p + 1)]);
+  cols.push(['GND', 'GND']);
+  hdr.appendChild(mk('rect', { x: x0 - 26, y: yTop - 34, width: dx * cols.length + 8, height: yBot - yTop + 68, rx: 8, fill: '#efede7', stroke: '#c9c6bd' }));
+  const wire = (n) => { if (n >= 22 && n <= 31) return ['W', n - 21]; if (n >= 32 && n <= 41) return ['X', n - 31]; if (n >= 42 && n <= 51) return ['Y', n - 41]; return null; };
+  cols.forEach((pair, c) => {
+    const x = x0 + c * dx;
+    pair.forEach((label, r) => {
+      const y = r ? yBot : yTop;
+      const ny = r ? y + 34 : y - 20;
+      const w = wire(+label);
+      if (w) {
+        hdr.appendChild(mk('circle', { cx: x, cy: y, r: 16, fill: C[{W:'A',X:'B',Y:'C'}[w[0]]] }));
+        hdr.appendChild(mk('text', { x, y: y + 4, class: 'lbl' }, w[0] + w[1]));
+      } else {
+        hdr.appendChild(mk('rect', { x: x - 7, y: y - 7, width: 14, height: 14, class: 'hole' }));
+      }
+      hdr.appendChild(mk('text', { x, y: ny, class: isNaN(+label) ? 'bad' : 'num' }, label));
+    });
+  });
+  const ana = document.getElementById('ana');
+  const ax0 = 60, adx = 52, ay = 60;
+  ana.appendChild(mk('rect', { x: ax0 - 30, y: ay - 46, width: adx * 16 + 8, height: 84, rx: 8, fill: '#efede7', stroke: '#c9c6bd' }));
+  for (let k = 0; k < 16; k++) {
+    const x = ax0 + k * adx;
+    if (k < 8) {
+      ana.appendChild(mk('circle', { cx: x, cy: ay, r: 16, fill: C.D }));
+      ana.appendChild(mk('text', { x, y: ay + 4, class: 'lbl' }, 'Z' + (k + 1)));
+    } else {
+      ana.appendChild(mk('rect', { x: x - 7, y: ay - 7, width: 14, height: 14, class: 'hole' }));
+    }
+    ana.appendChild(mk('text', { x, y: ay - 24, class: 'num' }, 'A' + k));
+  }
+})();
+</script>
+</body>
+</html>

@@ -25,3 +25,7 @@ notes/
 router-options.json
 # Teczka velocity (kopia materiałów do analizy, 16.11)
 TECZKA-VELOCITY-*/
+
+# skaner Mega: narzedzia (avrdude.exe) i cache
+skaner-mega/narzedzia/
+skaner-mega/**/__pycache__/
