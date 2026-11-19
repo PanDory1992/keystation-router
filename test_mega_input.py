@@ -145,13 +145,15 @@ def test_hires_split_follows_the_cc88_standard():
     assert hires_split(126.999)[1] <= 127
 
 
-def test_hires_off_sends_plain_notes_and_b16_stays_on_cc88():
+def test_hires_off_sends_plain_notes_and_b16_is_on_cc89():
+    from pedal_router import PLAY, destination
     m = PedalMapper()
     assert m.transform(m.mega_message("on", 60, 7000), exact=True) == [bytes((0x90, 60, 97))]
-    assert m.transform([0xB0, 92, 40]) == [bytes((0xB0, 88, 40))]
+    out = m.transform([0xB0, 92, 40])
+    assert out == [bytes((0xB0, 89, 40))] and destination(out[0]) == PLAY
 
 
-def test_hires_on_puts_cc88_right_before_the_note_and_moves_b16():
+def test_hires_on_puts_cc88_right_before_the_note():
     from pedal_router import PLAY, destination
     m = PedalMapper()
     m.mega_settings["wysoka_rozdzielczosc"] = True

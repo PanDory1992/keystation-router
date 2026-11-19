@@ -32,8 +32,8 @@ DEFAULT_CURVES = {
     "fortepian": {"kotwica_us": 6500, "kotwica_velocity": 100},
     "fortepian-pelny": {"kotwica_us": 6500, "kotwica_velocity": 120},
 }
-# wysoka_rozdzielczosc: przed nuta CC88 z czescia ulamkowa velocity (Pianoteq: 14 bitow). Wlaczone przenosi tez
-# galke B16 z CC88 na CC89, bo CC88 jest wtedy zajete (mape Pianoteq trzeba raz przestawic na CC89).
+# wysoka_rozdzielczosc: przed nuta CC88 z czescia ulamkowa velocity (Pianoteq: 14 bitow). Galka B16 od 20.11
+# wysyla CC89, wiec CC88 jest wolne; wlaczac dopiero, gdy w mapie Pianoteq nic nie jest przypisane do CC88.
 DEFAULT_SETTINGS = {"krzywa": "fortepian", "czarne_mnoznik": 1.28, "minimum": 2, "wysoka_rozdzielczosc": False,
                     "krzywe": DEFAULT_CURVES}
 

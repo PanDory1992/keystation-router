@@ -276,9 +276,9 @@ MAIN_FADER_CC = 83              # C9 in the surface map
 RAW_MAIN_FADER_CC = 7           # physical C9 suspected to send CC7 (standard volume)
 # B10..B17 (were mixer pan) -> free CCs no surface control listens to.
 # B17 (CC95) is the half-pedal depth knob since 13.11, so it is not here.
-PAN_KNOB_CC = dict(zip((10, 2, 12, 13, 75, 76, 92), (14, 15, 20, 21, 86, 87, 88)))
-HIRES_CC = 88            # 20.11: prefiks wysokiej rozdzielczosci velocity (MIDI CA-031); wtedy B16 idzie na:
-B16_HIRES_CC = 89
+# 20.11: B16 przeniesiona z CC88 na CC89 na stale (Miki), bo CC88 to prefiks wysokiej rozdzielczosci velocity
+PAN_KNOB_CC = dict(zip((10, 2, 12, 13, 75, 76, 92), (14, 15, 20, 21, 86, 87, 89)))
+HIRES_CC = 88            # 20.11: prefiks wysokiej rozdzielczosci velocity (MIDI CA-031), tylko dla nut z Megi
 KNOB_CC = dict(zip((42, 34, 44, 45, 77, 78, 79, 94, 16, 17, 18, 19, 80, 81),
                    range(104, 118)))
 CHANNEL_PRESSURE_KNOB_CC = 118  # physical B32
@@ -332,7 +332,7 @@ def button_label(program: int) -> str | None:
 
 PLAY, CONTROL = "play", "control"
 # Controller numbers an instrument is meant to receive from a keyboard.
-PLAY_CC = ({1, 11, 64, 66, 67, B16_HIRES_CC} | set(PAN_KNOB_CC.values()) | set(range(104, 120))
+PLAY_CC = ({1, 11, 64, 66, 67, HIRES_CC} | set(PAN_KNOB_CC.values()) | set(range(104, 120))
            | set(range(120, 128)))
 
 
@@ -678,10 +678,7 @@ class PedalMapper:
             if cc in KNOB_CC:
                 return [bytes((status, KNOB_CC[cc], value))]
             if cc in PAN_KNOB_CC:
-                out_cc = PAN_KNOB_CC[cc]
-                if out_cc == HIRES_CC and self.mega_settings.get("wysoka_rozdzielczosc"):
-                    out_cc = B16_HIRES_CC        # CC88 zajete przez wysoka rozdzielczosc velocity
-                return [bytes((status, out_cc, value))]
+                return [bytes((status, PAN_KNOB_CC[cc], value))]
             if self.fader_link is not None and cc in FADER_CC[1:]:
                 self.fader_link.move(f"C{FADER_CC.index(cc) + 1}", value)
                 return []
