@@ -99,19 +99,27 @@ def flash(port, which):
     say(f"Wgrywam program „{which}” na {port}... (ok. 10 s, na Medze mrugają diody RX/TX)")
     cmd = [str(AVRDUDE), "-C", str(AVRCONF), "-p", "atmega2560", "-c", "wiring", "-P", port,
            "-b", "115200", "-D", "-U", f"flash:w:{hexfile}:i"]
-    try:
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=90)
-    except subprocess.TimeoutExpired:
-        say("Wgrywanie trwało za długo i zostało przerwane. Odłącz i podłącz Megę, spróbuj jeszcze raz.")
-        return False
-    log = (r.stdout or "") + (r.stderr or "")
     WYNIKI.mkdir(exist_ok=True)
+    log = ""
+    for attempt in range(1, 4):       # bootloader klonow czasem nie lapie synchronizacji za pierwszym razem
+        try:
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=90)
+        except subprocess.TimeoutExpired:
+            say("Wgrywanie trwało za długo i zostało przerwane. Odłącz i podłącz Megę, spróbuj jeszcze raz.")
+            return False
+        log += f"--- proba {attempt} ---\n" + (r.stdout or "") + (r.stderr or "")
+        if r.returncode == 0:
+            break
+        if attempt < 3:
+            say(f"  Próba {attempt} nieudana, ponawiam...")
+            time.sleep(1.5)
     (WYNIKI / f"wgrywanie-{which}.log").write_text(log, encoding="utf-8")
     if r.returncode != 0:
         say("Wgrywanie się nie udało. Ostatnie linie:")
         for line in log.strip().splitlines()[-8:]:
             say("  " + line)
-        say("Najczęstsze przyczyny: port zajęty przez inny program, zły kabel, inna płytka niż Mega 2560.")
+        say("Co zrobić: zamknij inne okna skanera, odłącz Megę z USB na 5 s i podłącz z powrotem, uruchom jeszcze raz.")
+        say("Jeśli dalej nie: uruchom, a gdy pojawi się „Wgrywam”, naciśnij raz czerwony przycisk RESET na Medze.")
         return False
     say("Wgrane.")
     return True
