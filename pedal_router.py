@@ -52,6 +52,7 @@ sys.path.insert(0, str(ROOT / "vendor"))
 import rtmidi  # noqa: E402
 from udp_bus import UdpBus  # noqa: E402  (06.11: live bus for plugins and trainers)
 from fader_assign import ASSIGN_PROGRAM, FaderLink  # noqa: E402  (16.11: C2..C8 on any channel)
+import mega_input  # noqa: E402  (19.11: klawisze z Arduino Mega, czas miedzy stykami -> velocity)
 
 INPUT_NAME = "Keystation Pro 88"
 _INPUT_RE = re.compile(r"^(?:\d+-\s*)?" + re.escape(INPUT_NAME) + r"(?:\s+\d+)?$", re.IGNORECASE)
@@ -121,6 +122,7 @@ ONE_CHORD_LOUD = 80
 ONE_CHORD_P = 0.6
 BLACK_MEASURED_MIN = 41  # the black sensor never sends 2..40
 TOUCH_FILE = ROOT / "touch-mode"
+MEGA_FILE = ROOT / "mega-krzywa.json"   # 19.11: krzywa dla klawiszy z Megi (C53 przelacza, gdy Mega gra)
 DEFAULT_TOUCH = "naturalna"
 MONITOR_NAME = "Keystation Monitor"   # copy of played notes (after mapping) for the dynamics mirror page
 # Live state for the mirror page (05.11): on the monitor port only, MIDI channel 16 CCs,
@@ -378,6 +380,9 @@ class PedalMapper:
         self.bounces = 0                  # bounces removed since start
         self.last_event = None            # "deferred" / "bounce" for the last transform
         self.options_dirty = False
+        self.mega_active = False          # 19.11: klawisze z Megi; wtedy nuty z Keystation sa pomijane
+        self.mega_settings = mega_input.load_settings(Path("/nonexistent"))
+        self.mega_dirty = False           # C53 zmienil krzywa Megi -> petla glowna zapisuje plik
 
     def options(self) -> dict:
         return {"half_pedal": self.half_pedal, "half_depth": self.half_depth, "debounce": self.debounce}
@@ -445,6 +450,20 @@ class PedalMapper:
         self.touch_mode = mode
         self.touch_dirty = True
         return True
+
+    def next_mega_curve(self) -> str:
+        """C53, gdy graja klawisze z Megi: nastepna krzywa z mega-krzywa.json (w kolko)."""
+        names = list(self.mega_settings["krzywe"])
+        k = (names.index(self.mega_settings["krzywa"]) + 1) % len(names)
+        self.mega_settings["krzywa"] = names[k]
+        self.mega_dirty = True
+        return names[k]
+
+    def mega_message(self, kind: str, note: int, us: int, channel: int = 0) -> bytes:
+        """Zdarzenie z Megi -> gotowy komunikat MIDI (velocity juz policzone, transform go nie zmienia)."""
+        if kind == "on":
+            return bytes((0x90 | channel, note, mega_input.note_velocity(note, us, self.mega_settings)))
+        return bytes((0x80 | channel, note, mega_input.release_velocity(us)))
 
     def next_touch(self) -> str | None:
         """The touch button: the next mode of TOUCH_CYCLE that has a map, wrapping round; from any other mode it goes to
@@ -561,7 +580,8 @@ class PedalMapper:
         self.mode = new_mode
         return packets
 
-    def transform(self, message: list[int] | bytes, now: float | None = None) -> list[bytes]:
+    def transform(self, message: list[int] | bytes, now: float | None = None, exact: bool = False) -> list[bytes]:
+        """exact=True: nuta z Megi z gotowym velocity (bez map czucia i odszumiania); note-off moze niesc velocity."""
         if now is None:
             now = time.monotonic()
         if not message:
@@ -595,6 +615,9 @@ class PedalMapper:
                 return []
             if is_on:
                 notes.add(data[1])
+                if exact:
+                    self.note_played(channel, data[2], now)
+                    return [data[:3]]
                 if self.velocity_map is not None:
                     black = data[1] % 12 in BLACK_KEYS
                     table = self.velocity_map[1 if black else 0]
@@ -623,7 +646,10 @@ class PedalMapper:
                 self.una_corda_values[channel] = value
                 return [bytes((0xB0 | channel, 67, value))]
             if data[1] == TOUCH_CYCLE_BUTTON:
-                self.next_touch()
+                if self.mega_active:
+                    self.next_mega_curve()
+                else:
+                    self.next_touch()
                 return []
             if data[1] in FREE_BUTTONS:
                 if data[1] == ASSIGN_PROGRAM and self.fader_link is not None:
@@ -670,8 +696,9 @@ class PedalMapper:
                 return [bytes((status, out_cc, out))]
         return [data]
 
-    def route(self, message: list[int] | bytes, now: float | None = None) -> list[tuple[str, bytes]]:
-        return [(destination(p), p) for p in self.transform(message, now)]
+    def route(self, message: list[int] | bytes, now: float | None = None,
+              exact: bool = False) -> list[tuple[str, bytes]]:
+        return [(destination(p), p) for p in self.transform(message, now, exact)]
 
     def release_all(self) -> list[bytes]:
         packets = []
@@ -1036,6 +1063,16 @@ def run():
         with capture_lock:
             capture_q.append(f"{time.time():.4f},{kind},{message[1]},{message[2]},{out},{delta:.4f}\n")
 
+    mega_q = []
+
+    def capture_mega(kind, note, us, routed):
+        # 19.11: osobny plik notes-mega-RRRR-Wtt.csv: czas, on/off, nuta, us (czas miedzy stykami), velocity wyjscia
+        if not capture_on[0]:
+            return
+        out = next((p[2] for d, p in routed if p[0] & 0xF0 in (0x80, 0x90) and len(p) >= 3), "")
+        with capture_lock:
+            mega_q.append(f"{time.time():.4f},{kind},{note},{us},{out},{mapper.mega_settings['krzywa']}\n")
+
     def capture_writer():
         while not done.is_set():
             time.sleep(0.5)
@@ -1043,6 +1080,15 @@ def run():
             with capture_lock:
                 lines = capture_q[:]
                 capture_q.clear()
+                mega_lines = mega_q[:]
+                mega_q.clear()
+            if mega_lines:
+                try:
+                    with capture_file().with_name(capture_file().name.replace("notes-", "notes-mega-")).open(
+                            "a", encoding="ascii") as f:
+                        f.writelines(mega_lines)
+                except OSError:
+                    pass
             if lines:
                 t0 = time.perf_counter()
                 try:
@@ -1065,9 +1111,9 @@ def run():
     late = {"wall": 0.0, "logged": 0.0}
     scan_tick = [0]
 
-    def dispatch(message):
+    def dispatch(message, exact=False):
         with io_lock:
-            routed = mapper.route(message)
+            routed = mapper.route(message, exact=exact)
             for dest, packet in routed:
                 send(dest, packet)
             schedule_ramps()
@@ -1123,6 +1169,9 @@ def run():
                 messages += 1
                 last_input = now
                 return
+            if mapper.mega_active and len(message) >= 3 and message[0] & 0xF0 in (0x80, 0x90):
+                messages += 1          # 19.11: klawisze graja z Megi; nuty z zielonej plytki (bez tasm) pomijamy
+                return
             old_mode = mapper.mode
             routed = dispatch(message)
             took = time.perf_counter() - t0
@@ -1163,6 +1212,38 @@ def run():
             errors += 1
             logging.exception("MIDI callback failed")
 
+    def mega_event(kind, note, us):
+        nonlocal messages, last_input
+        try:
+            message = mapper.mega_message(kind, note, us)
+            routed = dispatch(message, exact=True)
+            now = time.time()
+            capture_mega(kind, note, us, routed)
+            if mapper.last_event is None:
+                publish_bus(message, routed)
+            if kind == "on" and mapper.last_event is None:
+                live_last.update(note=note, raw=message[2], out=message[2])
+            live_event.set()
+            messages += 1
+            last_input = now
+        except Exception:
+            logging.exception("Mega event failed")
+
+    def mega_state(on):
+        with io_lock:
+            mapper.mega_active = on
+            if not on:          # Mega odlaczona: wylacz grajace nuty, pedal zostaje
+                for ch, notes in enumerate(mapper.active_notes):
+                    for note in sorted(notes):
+                        send(PLAY, bytes((0x80 | ch, note, 0)))
+                    notes.clear()
+        logging.info("Mega %s", "connected: keys play from the Mega" if on else "disconnected: keys from Keystation again")
+
+    mapper.mega_settings = mega_input.load_settings(MEGA_FILE)
+    mega_mtime = [None]
+    mega_reader = mega_input.MegaReader(mega_event, mega_state, done, ROOT / "mega-off")
+    threading.Thread(target=mega_reader.run, name="mega", daemon=True).start()
+
     try:
         logging.info("Virtual outputs ready: play=%s control=%s", PLAY_NAME, CONTROL_NAME)
         while not done.wait(1):
@@ -1198,6 +1279,23 @@ def run():
                         pass
                     logging.info("Touch mode (button): %s", mapper.touch_mode)
                 save_options()          # B17 turned: the depth survives a restart
+                if mapper.mega_dirty:
+                    mapper.mega_dirty = False
+                    try:
+                        MEGA_FILE.write_text(json.dumps(mapper.mega_settings, indent=1, ensure_ascii=False), encoding="utf-8")
+                    except OSError:
+                        pass
+                    logging.info("Mega curve (button): %s", mapper.mega_settings["krzywa"])
+                try:
+                    m = MEGA_FILE.stat().st_mtime
+                except OSError:
+                    m = None
+                if m != mega_mtime[0]:
+                    mega_mtime[0] = m
+                    loaded = mega_input.load_settings(MEGA_FILE)
+                    with io_lock:
+                        mapper.mega_settings = loaded
+                    logging.info("Mega curve: %s %s", loaded["krzywa"], loaded["krzywe"][loaded["krzywa"]])
                 try:
                     wanted = TOUCH_FILE.read_text(encoding="ascii").strip() or DEFAULT_TOUCH
                 except OSError:
@@ -1275,6 +1373,8 @@ def run():
                     **mapper.options(), "bounces": mapper.bounces,
                     "velocity_map": mapper.velocity_map is not None,
                     "touch_mode": mapper.touch_mode,
+                    "mega": {"connected": mega_reader.connected, "port": mega_reader.port,
+                             "events": mega_reader.events, "curve": mapper.mega_settings["krzywa"]},
                     "monitor_port": monitor is not None,
                     "ones_mode": "context" if mapper.ones_context else "ppp",
                     "messages": messages, "sent_play": counts[PLAY], "sent_control": counts[CONTROL],

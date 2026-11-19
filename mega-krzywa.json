@@ -1,0 +1,15 @@
+{
+ "krzywa": "fortepian",
+ "czarne_mnoznik": 1.28,
+ "minimum": 2,
+ "krzywe": {
+  "fortepian": {
+   "kotwica_us": 6500,
+   "kotwica_velocity": 100
+  },
+  "fortepian-pelny": {
+   "kotwica_us": 6500,
+   "kotwica_velocity": 120
+  }
+ }
+}

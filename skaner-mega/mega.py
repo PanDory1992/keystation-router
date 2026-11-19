@@ -422,12 +422,25 @@ def main():
     ap.add_argument("--bez-wgrywania", action="store_true")
     ap.add_argument("--klawisze", help="lista nut MIDI zamiast calej klawiatury, np. 60,61,62")
     args = ap.parse_args()
+    # router (pedal_router.py) czyta Mege na stale; plik mega-off kaze mu oddac port na czas tego programu
+    off = HERE.parent / "mega-off"
+    try:
+        off.write_text("mega.py", encoding="ascii")
+        time.sleep(1.5)
+    except OSError:
+        off = None
     try:
         return {"test": cmd_test, "rozpoznaj": cmd_rozpoznaj, "skaner": cmd_skaner}[args.co](args)
     except serial.SerialException as e:
         say(f"Problem z portem: {e}")
         say("Zamknij inne programy, które mogą używać Megi (np. Arduino IDE), i spróbuj jeszcze raz.")
         return 1
+    finally:
+        if off is not None:
+            try:
+                off.unlink()
+            except OSError:
+                pass
 
 
 if __name__ == "__main__":
