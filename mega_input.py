@@ -32,7 +32,10 @@ DEFAULT_CURVES = {
     "fortepian": {"kotwica_us": 6500, "kotwica_velocity": 100},
     "fortepian-pelny": {"kotwica_us": 6500, "kotwica_velocity": 120},
 }
-DEFAULT_SETTINGS = {"krzywa": "fortepian", "czarne_mnoznik": 1.28, "minimum": 2, "krzywe": DEFAULT_CURVES}
+# wysoka_rozdzielczosc: przed nuta CC88 z czescia ulamkowa velocity (Pianoteq: 14 bitow). Wlaczone przenosi tez
+# galke B16 z CC88 na CC89, bo CC88 jest wtedy zajete (mape Pianoteq trzeba raz przestawic na CC89).
+DEFAULT_SETTINGS = {"krzywa": "fortepian", "czarne_mnoznik": 1.28, "minimum": 2, "wysoka_rozdzielczosc": False,
+                    "krzywe": DEFAULT_CURVES}
 
 
 def load_settings(path: Path) -> dict:
@@ -51,14 +54,27 @@ def load_settings(path: Path) -> dict:
     return data
 
 
-def note_velocity(midi: int, us: int, settings: dict) -> int:
-    """Czas miedzy stykami (us) -> velocity 1..127 wedlug aktywnej krzywej."""
+def note_velocity_exact(midi: int, us: int, settings: dict) -> float:
+    """Czas miedzy stykami (us) -> velocity z czescia ulamkowa, w zakresie minimum..127."""
     curve = settings["krzywe"][settings["krzywa"]]
     t = max(1, int(us))
     if midi % 12 in BLACK_KEYS:
         t = t / float(settings.get("czarne_mnoznik", 1.0))
     v = curve["kotwica_velocity"] + SLOPE * math.log2(curve["kotwica_us"] / t)
-    return max(int(settings.get("minimum", 1)), min(127, int(round(v))))
+    return max(float(settings.get("minimum", 1)), min(127.0, v))
+
+
+def note_velocity(midi: int, us: int, settings: dict) -> int:
+    """Czas miedzy stykami (us) -> velocity 1..127 wedlug aktywnej krzywej."""
+    return int(round(note_velocity_exact(midi, us, settings)))
+
+
+def hires_split(v: float) -> tuple[int, int]:
+    """Velocity z ulamkiem -> (velocity nuty 1..127, CC88 0..127), standard MIDI CA-031: wartosc = msb + lsb/128."""
+    v = max(1.0, min(127.0, v))
+    msb = int(v)
+    lsb = int((v - msb) * 128)
+    return msb, min(127, lsb)
 
 
 def release_velocity(us: int) -> int:

@@ -277,6 +277,8 @@ RAW_MAIN_FADER_CC = 7           # physical C9 suspected to send CC7 (standard vo
 # B10..B17 (were mixer pan) -> free CCs no surface control listens to.
 # B17 (CC95) is the half-pedal depth knob since 13.11, so it is not here.
 PAN_KNOB_CC = dict(zip((10, 2, 12, 13, 75, 76, 92), (14, 15, 20, 21, 86, 87, 88)))
+HIRES_CC = 88            # 20.11: prefiks wysokiej rozdzielczosci velocity (MIDI CA-031); wtedy B16 idzie na:
+B16_HIRES_CC = 89
 KNOB_CC = dict(zip((42, 34, 44, 45, 77, 78, 79, 94, 16, 17, 18, 19, 80, 81),
                    range(104, 118)))
 CHANNEL_PRESSURE_KNOB_CC = 118  # physical B32
@@ -330,7 +332,7 @@ def button_label(program: int) -> str | None:
 
 PLAY, CONTROL = "play", "control"
 # Controller numbers an instrument is meant to receive from a keyboard.
-PLAY_CC = ({1, 11, 64, 66, 67} | set(PAN_KNOB_CC.values()) | set(range(104, 120))
+PLAY_CC = ({1, 11, 64, 66, 67, B16_HIRES_CC} | set(PAN_KNOB_CC.values()) | set(range(104, 120))
            | set(range(120, 128)))
 
 
@@ -383,6 +385,7 @@ class PedalMapper:
         self.mega_active = False          # 19.11: klawisze z Megi; wtedy nuty z Keystation sa pomijane
         self.mega_settings = mega_input.load_settings(Path("/nonexistent"))
         self.mega_dirty = False           # C53 zmienil krzywa Megi -> petla glowna zapisuje plik
+        self.mega_lsb = None              # CC88 (0..127) dla najblizszej nuty z Megi, None = bez
 
     def options(self) -> dict:
         return {"half_pedal": self.half_pedal, "half_depth": self.half_depth, "debounce": self.debounce}
@@ -460,9 +463,15 @@ class PedalMapper:
         return names[k]
 
     def mega_message(self, kind: str, note: int, us: int, channel: int = 0) -> bytes:
-        """Zdarzenie z Megi -> gotowy komunikat MIDI (velocity juz policzone, transform go nie zmienia)."""
+        """Zdarzenie z Megi -> gotowy komunikat MIDI (velocity juz policzone, transform go nie zmienia).
+        Przy wysokiej rozdzielczosci czesc ulamkowa czeka w self.mega_lsb na transform (CC88 tuz przed nuta)."""
         if kind == "on":
-            return bytes((0x90 | channel, note, mega_input.note_velocity(note, us, self.mega_settings)))
+            v = mega_input.note_velocity_exact(note, us, self.mega_settings)
+            if self.mega_settings.get("wysoka_rozdzielczosc"):
+                msb, self.mega_lsb = mega_input.hires_split(v)
+            else:
+                msb, self.mega_lsb = int(round(v)), None
+            return bytes((0x90 | channel, note, msb))
         return bytes((0x80 | channel, note, mega_input.release_velocity(us)))
 
     def next_touch(self) -> str | None:
@@ -617,6 +626,9 @@ class PedalMapper:
                 notes.add(data[1])
                 if exact:
                     self.note_played(channel, data[2], now)
+                    lsb, self.mega_lsb = self.mega_lsb, None
+                    if lsb is not None:          # CC88 musi przyjsc tuz przed nuta, na tym samym kanale
+                        return [bytes((0xB0 | channel, HIRES_CC, lsb)), data[:3]]
                     return [data[:3]]
                 if self.velocity_map is not None:
                     black = data[1] % 12 in BLACK_KEYS
@@ -666,7 +678,10 @@ class PedalMapper:
             if cc in KNOB_CC:
                 return [bytes((status, KNOB_CC[cc], value))]
             if cc in PAN_KNOB_CC:
-                return [bytes((status, PAN_KNOB_CC[cc], value))]
+                out_cc = PAN_KNOB_CC[cc]
+                if out_cc == HIRES_CC and self.mega_settings.get("wysoka_rozdzielczosc"):
+                    out_cc = B16_HIRES_CC        # CC88 zajete przez wysoka rozdzielczosc velocity
+                return [bytes((status, out_cc, value))]
             if self.fader_link is not None and cc in FADER_CC[1:]:
                 self.fader_link.move(f"C{FADER_CC.index(cc) + 1}", value)
                 return []

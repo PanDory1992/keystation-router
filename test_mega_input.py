@@ -135,3 +135,31 @@ def test_reader_reads_a_live_port(monkeypatch):
     th.join(2)
     assert got == [("on", 60, 6500), ("off", 60, 25000)]
     assert states[0] is True and r.events == 2
+
+
+def test_hires_split_follows_the_cc88_standard():
+    from mega_input import hires_split
+    assert hires_split(87.43) == (87, 55)          # 0,43 * 128 = 55
+    assert hires_split(100.0) == (100, 0)
+    assert hires_split(127.0) == (127, 0) and hires_split(0.3) == (1, 0)
+    assert hires_split(126.999)[1] <= 127
+
+
+def test_hires_off_sends_plain_notes_and_b16_stays_on_cc88():
+    m = PedalMapper()
+    assert m.transform(m.mega_message("on", 60, 7000), exact=True) == [bytes((0x90, 60, 97))]
+    assert m.transform([0xB0, 92, 40]) == [bytes((0xB0, 88, 40))]
+
+
+def test_hires_on_puts_cc88_right_before_the_note_and_moves_b16():
+    from pedal_router import PLAY, destination
+    m = PedalMapper()
+    m.mega_settings["wysoka_rozdzielczosc"] = True
+    out = m.transform(m.mega_message("on", 60, 7000), exact=True)
+    v = mega_input.note_velocity_exact(60, 7000, m.mega_settings)
+    assert out == [bytes((0xB0, 88, int((v - int(v)) * 128))), bytes((0x90, 60, int(v)))]
+    assert all(destination(p) == PLAY for p in out)
+    assert m.mega_lsb is None                                   # zuzyte przez te jedna nute
+    assert m.transform(m.mega_message("off", 60, 25000), exact=True) == [bytes((0x80, 60, 64))]
+    b16 = m.transform([0xB0, 92, 40])
+    assert b16 == [bytes((0xB0, 89, 40))] and destination(b16[0]) == PLAY
