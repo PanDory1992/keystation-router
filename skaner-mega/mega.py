@@ -4,6 +4,7 @@
 Uzycie (zwykle przez pliki .bat w tym folderze):
   python mega.py test          wgrywa program testowy i sprawdza, czy Mega odpowiada
   python mega.py rozpoznaj     wgrywa program rozpoznania i prowadzi przez 88 klawiszy
+  python mega.py skaner        wgrywa skaner i pokazuje na zywo czas kazdego uderzenia
 Opcje: --port COM5 (zamiast szukania), --bez-wgrywania (gdy program jest juz na plytce).
 """
 import argparse
@@ -22,7 +23,9 @@ from serial.tools import list_ports  # noqa: E402
 
 AVRDUDE = HERE / "narzedzia" / "avrdude" / "bin" / "avrdude.exe"
 AVRCONF = HERE / "narzedzia" / "avrdude" / "etc" / "avrdude.conf"
-HEX = {"test": HERE / "hex" / "test.hex", "rozpoznanie": HERE / "hex" / "rozpoznanie.hex"}
+HEX = {"test": HERE / "hex" / "test.hex", "rozpoznanie": HERE / "hex" / "rozpoznanie.hex",
+       "skaner": HERE / "hex" / "skaner.hex"}
+BAUD_SKANER = 1000000
 WYNIKI = HERE / "wyniki"
 BAUD = 115200
 MEGA_VIDS = {0x1A86, 0x2341, 0x2A03}  # CH340, Arduino, Arduino.org
@@ -340,15 +343,79 @@ def cmd_rozpoznaj(args):
     return 0
 
 
+# --- skaner: podglad na zywo --------------------------------------------------------------------------------
+def cmd_skaner(args):
+    port = find_port(args.port)
+    if not port:
+        return 1
+    if not args.bez_wgrywania and not flash(port, "skaner"):
+        return 1
+    WYNIKI.mkdir(exist_ok=True)
+    stamp = datetime.now().strftime("%Y%m%d-%H%M")
+    log = open(WYNIKI / f"skaner-{stamp}.csv", "w", encoding="utf-8")
+    log.write("czas_pc,rodzaj,midi,us\n")
+    s = serial.Serial(port, BAUD_SKANER, timeout=0.05)
+    lines = read_lines(s)
+    say("Czekam na skaner...")
+    t_end = time.time() + 8
+    for line in lines:
+        if time.time() > t_end:
+            say("Skaner nie odpowiada. Spróbuj jeszcze raz albo napisz do Claude.")
+            return 1
+        if line and line.startswith("SKANER"):
+            break
+        if line and "BLAD" in line:
+            say("Skaner zgłasza nietypowy układ pinów płytki. Napisz do Claude.")
+            return 1
+    say("Skaner działa. Graj: każda nuta pokaże czas między stykami.")
+    say("Mniej milisekund = szybszy klawisz = głośniej. K = koniec i zapis.")
+    say("")
+    keys = Keys()
+    stats, anomalies, last_h = {}, 0, ""
+    try:
+        while True:
+            if keys.get() == "k":
+                break
+            line = next(lines)
+            if not line:
+                continue
+            p = line.split()
+            now = time.time()
+            if p[0] in "+-" and len(p) == 3:
+                midi, us = int(p[1]), int(p[2])
+                log.write(f"{now:.4f},{'on' if p[0] == '+' else 'off'},{midi},{us}\n")
+                if p[0] == "+":
+                    stats.setdefault(midi, []).append(us)
+                    say(f"  {key_name(midi):<14} {us / 1000:7.2f} ms")
+            elif p[0] == "!":
+                anomalies += 1
+                log.write(f"{now:.4f},odwrotnie,{p[1]},0\n")
+                say(f"  {key_name(int(p[1])):<14} UWAGA: drugi styk przed pierwszym (pominięte)")
+            elif p[0] == "H":
+                last_h = f"skan co {p[2]} us"
+    except KeyboardInterrupt:
+        pass
+    s.close()
+    log.close()
+    say("")
+    n = sum(len(v) for v in stats.values())
+    say(f"Nut: {n}, klawiszy: {len(stats)}, odwróconych styków: {anomalies}. {last_h}")
+    if stats:
+        allv = sorted(x for v in stats.values() for x in v)
+        say(f"Najszybsze uderzenie: {allv[0] / 1000:.2f} ms, najwolniejsze: {allv[-1] / 1000:.1f} ms")
+    say(f"Zapis: {WYNIKI / f'skaner-{stamp}.csv'}")
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("co", choices=["test", "rozpoznaj"])
+    ap.add_argument("co", choices=["test", "rozpoznaj", "skaner"])
     ap.add_argument("--port")
     ap.add_argument("--bez-wgrywania", action="store_true")
     ap.add_argument("--klawisze", help="lista nut MIDI zamiast calej klawiatury, np. 60,61,62")
     args = ap.parse_args()
     try:
-        return cmd_test(args) if args.co == "test" else cmd_rozpoznaj(args)
+        return {"test": cmd_test, "rozpoznaj": cmd_rozpoznaj, "skaner": cmd_skaner}[args.co](args)
     except serial.SerialException as e:
         say(f"Problem z portem: {e}")
         say("Zamknij inne programy, które mogą używać Megi (np. Arduino IDE), i spróbuj jeszcze raz.")
