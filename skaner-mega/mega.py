@@ -25,7 +25,7 @@ AVRDUDE = HERE / "narzedzia" / "avrdude" / "bin" / "avrdude.exe"
 AVRCONF = HERE / "narzedzia" / "avrdude" / "etc" / "avrdude.conf"
 HEX = {"test": HERE / "hex" / "test.hex", "rozpoznanie": HERE / "hex" / "rozpoznanie.hex",
        "skaner": HERE / "hex" / "skaner.hex"}
-BAUD_SKANER = 1000000
+BAUD_SKANER = 250000   # 20.11: tak samo jak router (mega_input.BAUD)
 WYNIKI = HERE / "wyniki"
 BAUD = 115200
 MEGA_VIDS = {0x1A86, 0x2341, 0x2A03}  # CH340, Arduino, Arduino.org
@@ -134,7 +134,7 @@ def read_lines(s):
     """Generator linii z portu (bez blokowania na dluzej niz timeout portu)."""
     buf = b""
     while True:
-        chunk = s.read(4096)
+        chunk = s.read(max(1, s.in_waiting))     # od razu po pierwszym bajcie, nie po timeoucie
         if chunk:
             buf += chunk
             while b"\n" in buf:

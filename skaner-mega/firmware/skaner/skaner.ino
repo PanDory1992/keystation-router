@@ -11,7 +11,7 @@
 // Bezpieczenstwo: tylko stan niski albo wejscie z podciagnieciem, nigdy stan wysoki na liniach klawiatury.
 // Polowki nie maja wspolnych linii (sprawdzone rozpoznaniem), wiec sterujemy po jednej linii w kazdej naraz.
 //
-// Wyjscie 1 000 000 bodow, linie tekstu:
+// Wyjscie 250 000 bodow (od 20.11), linie tekstu:
 //   SKANER v1
 //   + <midi> <us>     nuta wlaczona; us = czas od zamkniecia pierwszego do drugiego styku
 //   - <midi> <us>     nuta wylaczona przy otwarciu pierwszego styku; us = od otwarcia drugiego do pierwszego (0: brak)
@@ -131,9 +131,9 @@ void setup() {
     mapF[v] = a; mapL[v] = b;
   }
   TCCR1A = 0; TCCR1B = (1 << CS11); TCNT1 = 0;   // Timer1: zegar / 8 = 2 MHz
-  Serial.begin(1000000);
+  Serial.begin(250000);   // 20.11: 250 kbit zamiast 1 Mbit: mostek CH340 zawieszal sie przy 1 Mbit
   delay(200);
-  Serial.println(F("SKANER v1"));
+  Serial.println(F("SKANER v1.1"));
 }
 
 // Jeden krok skanu, rozwiniety w czasie kompilacji: stale rejestry = pojedyncze instrukcje sbi/cbi.

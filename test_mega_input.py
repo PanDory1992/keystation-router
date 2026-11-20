@@ -108,7 +108,7 @@ def test_debounce_keeps_the_release_velocity():
 
 
 def test_module_constants():
-    assert mega_input.SLOPE == 25.0 and mega_input.BAUD == 1_000_000
+    assert mega_input.SLOPE == 25.0 and mega_input.BAUD == 250_000
 
 
 def test_reader_reads_a_live_port(monkeypatch):

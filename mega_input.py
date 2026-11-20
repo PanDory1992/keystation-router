@@ -21,7 +21,7 @@ from pathlib import Path
 BLACK_KEYS = {1, 3, 6, 8, 10}
 SLOPE = 25.0               # velocity na podwojenie predkosci (Bosendorfer SE)
 RELEASE_CENTER_US = 25000  # mediana czasu puszczenia z gry 19.11 -> velocity puszczenia 64
-BAUD = 1_000_000
+BAUD = 250_000            # 20.11: 1 Mbit zawieszal mostek CH340; skaner v1.1 nadaje 250 kbit
 MEGA_VIDS = {0x1A86, 0x2341, 0x2A03}
 
 # 19.11, gra 9 min: najszybsze 1% bialych 6,9 ms, czarnych 8,7 ms; mediana 15,2 / 22,8 ms.
@@ -115,6 +115,7 @@ class MegaReader:
         self.port = None
         self.connected = False
         self.events = 0
+        self.last_data = 0.0              # time.time() ostatniego bajtu z Megi (znak zycia H co 2 s)
         self._busy_logged = 0.0
 
     def run(self):
@@ -170,8 +171,18 @@ class MegaReader:
                             time.sleep(0.05)
                             link.dtr = False
                             logging.info("Mega: reset pulse sent")
+                    if self.connected and self.last_data and time.time() - self.last_data > 6:
+                        # 20.11: Mega zamilkla mimo otwartego portu (brak "H" co 2 s): zglaszamy to i jeden reset
+                        logging.warning("Mega: silent for 6 s on %s (mostek USB?), reset pulse", port)
+                        self.connected = False
+                        self.on_state(False)
+                        link.dtr = True
+                        time.sleep(0.05)
+                        link.dtr = False
+                        self.last_data = time.time()
                     if not chunk:
                         continue
+                    self.last_data = time.time()
                     got += len(chunk)
                     buf += chunk
                     while b"\n" in buf:
