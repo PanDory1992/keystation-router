@@ -42,12 +42,13 @@ AVRCONF = ROOT / "skaner-mega" / "narzedzia" / "avrdude" / "etc" / "avrdude.conf
 
 # 19.11, gra 9 min: najszybsze 1% bialych 6,9 ms, czarnych 8,7 ms; mediana 15,2 / 22,8 ms.
 DEFAULT_CURVES = {
+    "naturalna": {"naturalna": {"K": 131.7, "tau_us": 460, "lo": 2, "hi": 118, "floor": 10, "top": 127, "g": 1.7,
+                                "pivot": 100}},
     "fortepian": {"kotwica_us": 6500, "kotwica_velocity": 100},
-    "fortepian-pelny": {"kotwica_us": 6500, "kotwica_velocity": 120},
 }
 # wysoka_rozdzielczosc: przed nuta CC88 z czescia ulamkowa velocity (Pianoteq: 14 bitow).
 # min_us (20.11): krotszy czas miedzy stykami to nie uderzenie, tylko artefakt (najszybsze prawdziwe: 5,1 ms).
-DEFAULT_SETTINGS = {"krzywa": "fortepian", "czarne_mnoznik": 1.28, "minimum": 2, "wysoka_rozdzielczosc": False,
+DEFAULT_SETTINGS = {"krzywa": "naturalna", "czarne_mnoznik": 1.28, "minimum": 2, "wysoka_rozdzielczosc": False,
                     "min_us": 2000, "krzywe": DEFAULT_CURVES}
 
 
@@ -60,11 +61,86 @@ def load_settings(path: Path) -> dict:
     except (OSError, ValueError):
         pass
     curves = data.get("krzywe")
+    if isinstance(curves, dict):                       # 20.11: zla krzywa w pliku nie moze zatrzymac nut
+        curves = {k: c for k, c in curves.items() if curve_ok(c)}
     if not isinstance(curves, dict) or not curves:
         data["krzywe"] = DEFAULT_CURVES
+    else:
+        data["krzywe"] = curves
     if data["krzywa"] not in data["krzywe"]:
         data["krzywa"] = next(iter(data["krzywe"]))
     return data
+
+
+def curve_ok(c) -> bool:
+    """Krzywa z kotwica {kotwica_us, kotwica_velocity} albo z punktami {punkty: [[us, velocity], ...]} (min. 2)."""
+    if not isinstance(c, dict):
+        return False
+    try:
+        if "naturalna" in c:
+            p = c["naturalna"]
+            return (float(p["tau_us"]) > 0 and float(p["K"]) > float(p["hi"]) > float(p["pivot"]) > float(p["lo"])
+                    and 1.0 <= float(p["g"]) <= 2.0)
+        if "punkty" in c:
+            pts = [(float(u), float(v)) for u, v in c["punkty"]]
+            return len(pts) >= 2 and all(u > 0 for u, _ in pts) and len({u for u, _ in pts}) == len(pts)
+        return float(c["kotwica_us"]) > 0 and math.isfinite(float(c["kotwica_velocity"]))
+    except (KeyError, TypeError, ValueError):
+        return False
+
+
+def curve_value(curve: dict, t: float) -> float:
+    """Czas (us, juz po przeliczeniu czarnych) -> velocity przed obcieciem do zakresu.
+
+    Kotwica: wzor Bosendorfera, +25 na kazde przepolowienie czasu. Punkty (20.11, "dopasowana"): linie miedzy
+    punktami w skali log2 czasu, poza skrajnymi punktami dalej tym samym nachyleniem co skrajny odcinek."""
+    t = max(1.0, float(t))
+    if "naturalna" in curve:
+        return naturalna_value(curve["naturalna"], t)
+    if "punkty" not in curve:
+        return curve["kotwica_velocity"] + SLOPE * math.log2(curve["kotwica_us"] / t)
+    pts = sorted((math.log2(float(u)), float(v)) for u, v in curve["punkty"])
+    x = math.log2(t)
+    i = 0
+    while i < len(pts) - 2 and x > pts[i + 1][0]:
+        i += 1
+    (x0, v0), (x1, v1) = pts[i], pts[i + 1]
+    return v0 + (v1 - v0) * (x - x0) / (x1 - x0)
+
+
+# 20.11 (Miki: "feeling jak przed przebudowa, z mozliwosciami Megi, zgodny z fortepianem"): Naturalna z 16.11 liczona
+# z prawdziwego czasu. Zielona plytka mierzyla ten sam czas miedzy stykami: surowe = K - t/tau (K = 131,7 z rozrzutu
+# reki, RAPORT-naturalna). tau = 460 us z dopasowania rozkladow tej samej reki: 83 275 bialych nut z zielonej plytki
+# (W46-W47) i 689 z Megi; mediana: surowe 99 <-> 14,8 ms (tau 452), kwartyle 454-482. Sprawdzenie: Twoje najmocniejsze
+# 1% (6,0 ms) = surowe 118,6, a w Naturalnej p99 surowe 118 = 127. Krzywa ta sama co w routerze (128/128 wartosci),
+# ale ciagla: bez 9 schodkow, bez dziury czarnych, bez odszumiania i bez regul dla "1". Ponizej surowego 2 (wolniej niz
+# prog zielonej plytki) dalej koncowym nachyleniem S (jak ledwo dotkniety mlotek), az do minimum.
+NATURALNA_MEGA = {"K": 131.7, "tau_us": 460, "lo": 2, "hi": 118, "floor": 10, "top": 127, "g": 1.7, "pivot": 100}
+
+
+def naturalna_raw_value(p: dict, r: float) -> float:
+    """Naturalna (velocity-map.naturalna.json) jako ciagla funkcja surowego velocity r."""
+    K, lo, hi, g, pivot = float(p["K"]), float(p["lo"]), float(p["hi"]), float(p["g"]), float(p["pivot"])
+    floor, top = float(p.get("floor", 10)), float(p.get("top", 127))
+    r = min(r, K - 1e-6)
+    ls = lambda x: -math.log(K - x)  # noqa: E731  log predkosci klawisza
+    span = ls(hi) - ls(lo)
+    n = (ls(r) - ls(lo)) / span
+    if r < lo:
+        n *= (2 - g)
+    elif n > 1:
+        n = 1 + (n - 1) * (2 - g)
+    else:
+        P = (ls(pivot) - ls(lo)) / span
+        up = n >= P
+        a = (n - P) / (1 - P) if up else (P - n) / P
+        h = a * (g - (g - 1) * a)                 # nachylenie g w srodku, 2-g na krancach (filcowy mlotek)
+        n = P + (1 - P) * h if up else P - P * h
+    return floor + (top - floor) * n
+
+
+def naturalna_value(p: dict, t: float) -> float:
+    return naturalna_raw_value(p, float(p["K"]) - t / float(p["tau_us"]))
 
 
 def note_velocity_exact(midi: int, us: int, settings: dict) -> float:
@@ -73,7 +149,7 @@ def note_velocity_exact(midi: int, us: int, settings: dict) -> float:
     t = max(1, int(us))
     if midi % 12 in BLACK_KEYS:
         t = t / float(settings.get("czarne_mnoznik", 1.0))
-    v = curve["kotwica_velocity"] + SLOPE * math.log2(curve["kotwica_us"] / t)
+    v = curve_value(curve, t)
     return max(float(settings.get("minimum", 1)), min(127.0, v))
 
 

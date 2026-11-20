@@ -1,0 +1,606 @@
+//! Reading the router's live state.
+//!
+//! The router (pedal_router.py) writes `live.json` next to itself on every change
+//! and once a second. The format is versioned (`"v"`) and every field is optional:
+//! unknown fields are ignored and missing ones fall back to defaults, so new
+//! fields can be added on either side without breaking the other.
+//!
+//! If `live.json` does not exist yet (older router), `status.json` is read
+//! instead: it carries the same state, only refreshed once a second.
+
+use serde_json::Value;
+use std::collections::HashMap;
+use std::path::PathBuf;
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+
+/// After this long without a fresh timestamp the state is shown as stale.
+pub const STALE_AFTER_S: f64 = 3.5;
+/// How often the editor re-reads the file.
+pub const POLL_EVERY: Duration = Duration::from_millis(80);
+/// Pause in polling after a click (router applies a command within ~40 ms).
+pub const HOLD_AFTER_CLICK: Duration = Duration::from_millis(300);
+
+#[derive(Clone, Debug, Default)]
+pub struct LastNote {
+    pub note: u8,
+    pub raw: u8,
+    pub out: u8,
+    /// 0.10.0: key from the Mega scanner: time between the two contacts in us
+    pub us: Option<u32>,
+}
+
+/// 0.10.0 (20.11): keys read by the Arduino Mega scanner, velocity from the grand-piano formula.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Mega {
+    pub connected: bool,
+    pub curve: String,
+    /// (name, curve) in the router's order
+    pub curves: Vec<(String, MegaCurve)>,
+    /// black keys: time divided by this before the formula
+    pub black: f64,
+    pub minimum: f64,
+    pub hires: bool,
+    /// 0.11.0 (MEGA 2.0): what the router knows about the scanner; None from an older router
+    pub health: Option<MegaHealth>,
+}
+
+/// 0.11.0: the router's view of the Mega: state code (gra, cisza, mostek, wgrywam, program, blad, brak, oddana),
+/// a Polish sentence when something is wrong, the firmware version, link counters and line problems.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct MegaHealth {
+    pub state: String,
+    pub message: String,
+    pub fw: Option<String>,
+    pub crc_errors: u64,
+    pub lost: u64,
+    pub fixed_stuck: u64,
+    pub problems: Vec<String>,
+    pub selftest: Vec<String>,
+}
+
+impl MegaHealth {
+    fn from_json(v: Option<&Value>) -> Option<MegaHealth> {
+        let v = v?;
+        let list = |k: &str| -> Vec<String> {
+            v.get(k).and_then(Value::as_array).map(|a| a.iter().filter_map(|x| x.as_str().map(str::to_owned)).collect()).unwrap_or_default()
+        };
+        Some(MegaHealth {
+            state: v.get("state").and_then(Value::as_str).unwrap_or("").to_owned(),
+            message: v.get("message").and_then(Value::as_str).unwrap_or("").to_owned(),
+            fw: v.get("fw").and_then(Value::as_str).map(str::to_owned),
+            crc_errors: v.get("crc_errors").and_then(Value::as_u64).unwrap_or(0),
+            lost: v.get("lost").and_then(Value::as_u64).unwrap_or(0),
+            fixed_stuck: v.get("fixed_stuck").and_then(Value::as_u64).unwrap_or(0),
+            problems: list("problems"),
+            selftest: list("selftest"),
+        })
+    }
+
+    /// Short label for the LCD footer when the Mega is not playing (None: nothing worth showing).
+    pub fn label(&self) -> Option<&'static str> {
+        match self.state.as_str() {
+            "cisza" => Some("CISZA"),
+            "mostek" => Some("ODŁĄCZ USB MEGI"),
+            "wgrywam" => Some("WGRYWAM"),
+            "program" => Some("INNY PROGRAM"),
+            "blad" => Some("BŁĄD PINÓW"),
+            "oddana" => Some("PODGLĄD"),
+            _ => None,
+        }
+    }
+
+    /// Everything the player should know, for the hover text.
+    pub fn tip(&self) -> String {
+        let mut out = Vec::new();
+        if !self.message.is_empty() {
+            out.push(self.message.clone());
+        }
+        if let Some(fw) = &self.fw {
+            out.push(format!("Skaner {fw}. Łącze: zepsutych ramek {}, zgubionych {}, naprawionych zawieszonych nut {}.",
+                self.crc_errors, self.lost, self.fixed_stuck));
+        }
+        for p in self.problems.iter().chain(self.selftest.iter()) {
+            out.push(format!("UWAGA: {p}"));
+        }
+        out.join("\n")
+    }
+}
+
+/// 0.12.0: a Mega curve: Bösendorfer anchor (+25 per halving of the time) or points from the calibration
+/// (straight lines in log2 time between points, the end slopes continue past the ends), like mega_input.curve_value.
+#[derive(Clone, Debug, PartialEq)]
+pub enum MegaCurve {
+    Anchor { us: f64, vel: f64 },
+    Points(Vec<(f64, f64)>),
+    /// 0.12.0: Naturalna z zielonej plytki liczona z czasu Megi (surowe = K - t/tau), jak mega_input.naturalna_value
+    Naturalna { k: f64, tau: f64, lo: f64, hi: f64, floor: f64, top: f64, g: f64, pivot: f64 },
+}
+
+impl MegaCurve {
+    fn from_json(c: &Value) -> Option<MegaCurve> {
+        if let Some(p) = c.get("naturalna") {
+            let f = |k: &str, d: Option<f64>| p.get(k).and_then(Value::as_f64).or(d);
+            return Some(MegaCurve::Naturalna {
+                k: f("K", None)?, tau: f("tau_us", None)?, lo: f("lo", None)?, hi: f("hi", None)?,
+                floor: f("floor", Some(10.0))?, top: f("top", Some(127.0))?, g: f("g", None)?, pivot: f("pivot", None)?,
+            });
+        }
+        if let Some(pts) = c.get("punkty").and_then(Value::as_array) {
+            let mut v: Vec<(f64, f64)> = pts
+                .iter()
+                .filter_map(|p| Some((p.get(0)?.as_f64()?, p.get(1)?.as_f64()?)))
+                .filter(|(u, _)| *u > 0.0)
+                .collect();
+            v.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
+            v.dedup_by(|a, b| a.0 == b.0);
+            return if v.len() >= 2 { Some(MegaCurve::Points(v)) } else { None };
+        }
+        Some(MegaCurve::Anchor { us: c.get("kotwica_us")?.as_f64()?, vel: c.get("kotwica_velocity")?.as_f64()? })
+    }
+
+    pub fn value(&self, t: f64) -> f64 {
+        let t = t.max(1.0);
+        match self {
+            MegaCurve::Anchor { us, vel } => vel + 25.0 * (us / t).log2(),
+            MegaCurve::Points(p) => {
+                let x = t.log2();
+                let mut i = 0;
+                while i + 2 < p.len() && x > p[i + 1].0.log2() {
+                    i += 1;
+                }
+                let (x0, v0, x1, v1) = (p[i].0.log2(), p[i].1, p[i + 1].0.log2(), p[i + 1].1);
+                v0 + (v1 - v0) * (x - x0) / (x1 - x0)
+            }
+            MegaCurve::Naturalna { k, tau, lo, hi, floor, top, g, pivot } => {
+                let (k, lo, hi, g, pivot) = (*k, *lo, *hi, *g, *pivot);
+                let r = (k - t / tau).min(k - 1e-6);
+                let ls = |x: f64| -(k - x).ln();
+                let span = ls(hi) - ls(lo);
+                let mut n = (ls(r) - ls(lo)) / span;
+                if r < lo {
+                    n *= 2.0 - g;
+                } else if n > 1.0 {
+                    n = 1.0 + (n - 1.0) * (2.0 - g);
+                } else {
+                    let pp = (ls(pivot) - ls(lo)) / span;
+                    let up = n >= pp;
+                    let a = if up { (n - pp) / (1.0 - pp) } else { (pp - n) / pp };
+                    let h = a * (g - (g - 1.0) * a);
+                    n = if up { pp + (1.0 - pp) * h } else { pp - pp * h };
+                }
+                floor + (top - floor) * n
+            }
+        }
+    }
+}
+
+impl Mega {
+    fn from_json(v: Option<&Value>) -> Option<Mega> {
+        let v = v?;
+        let curves = v
+            .get("curves")
+            .and_then(Value::as_object)
+            .map(|m| {
+                m.iter()
+                    .filter_map(|(k, c)| Some((k.clone(), MegaCurve::from_json(c)?)))
+                    .collect()
+            })
+            .unwrap_or_default();
+        Some(Mega {
+            connected: v.get("connected").and_then(Value::as_bool).unwrap_or(false),
+            curve: v.get("curve").and_then(Value::as_str).unwrap_or("").to_owned(),
+            curves,
+            black: v.get("black").and_then(Value::as_f64).unwrap_or(1.0).max(0.1),
+            minimum: v.get("minimum").and_then(Value::as_f64).unwrap_or(1.0),
+            hires: v.get("hires").and_then(Value::as_bool).unwrap_or(false),
+            health: MegaHealth::from_json(v.get("health")),
+        })
+    }
+
+    /// Velocity the router gives for `us` between the contacts (same formula as mega_input.py).
+    pub fn velocity(&self, us: f64, black: bool) -> f64 {
+        let fallback = MegaCurve::Anchor { us: 6500.0, vel: 100.0 };
+        let c = self.curves.iter().find(|c| c.0 == self.curve).map(|c| &c.1).unwrap_or(&fallback);
+        let t = (if black { us / self.black } else { us }).max(1.0);
+        c.value(t).clamp(self.minimum, 127.0)
+    }
+
+    pub fn next_curve(&self) -> String {
+        let i = self.curves.iter().position(|c| c.0 == self.curve).map_or(0, |i| i + 1);
+        self.curves.get(i % self.curves.len().max(1)).map(|c| c.0.clone()).unwrap_or_default()
+    }
+}
+
+/// 0.7.0: the last P10 button pressed ("B44".."C60") and when (router's unix time).
+#[derive(Clone, Debug, Default)]
+pub struct Pressed {
+    pub label: String,
+    pub t: f64,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct LiveState {
+    pub version: u64,
+    pub connected: Option<bool>,
+    pub pedal_mode: Option<String>,
+    pub pedal_value: u8,
+    pub una_corda: Option<bool>,
+    pub touch: Option<String>,
+    pub ones: Option<String>,
+    pub last: Option<LastNote>,
+    /// 0.10.0: the Mega scanner (None = older router)
+    pub mega: Option<Mega>,
+    /// Half pedal (0.3.0): on/off, CC64 value sent for "down", last physical B17 value.
+    pub half_pedal: Option<bool>,
+    pub half_depth: u8,
+    pub half_knob: Option<u8>,
+    /// Debounce filter (0.3.0) and how many bounces it removed since the router started.
+    pub debounce: Option<bool>,
+    pub bounces: u64,
+    /// Sustain release ramp in ms (0.4.0); None = older router that does not report it.
+    pub release_ms: Option<u16>,
+    /// 0.7.0: last position of every knob and fader ("B10".."B33", "C1".."C9"), 0..127.
+    /// Empty until the control is moved (or SNAPSHOT is pressed on the keyboard).
+    pub controls: HashMap<String, u8>,
+    pub button: Option<Pressed>,
+    /// 0.7.0: seconds left of "read positions" (router swallows knob/fader messages, SNAPSHOT is safe).
+    pub reading: f32,
+    /// 16.11: faders C2..C8 assigned to Studio One channels by name (router fader_assign.py).
+    pub faders: Faders,
+    /// Unix time of the router's last write.
+    pub updated: f64,
+    /// Which file the state came from ("live.json" or "status.json").
+    pub source: &'static str,
+}
+
+/// 16.11: which channel each fader C2..C8 drives, and the C54 assignment in progress.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Faders {
+    pub map: HashMap<String, String>,
+    /// seconds left after C54: the next fader moved takes `selected`
+    pub assigning: f32,
+    /// the channel selected in Studio One (from the bridge)
+    pub selected: Option<String>,
+    /// every channel of the open song, in mixer order (from the bridge)
+    pub channels: Vec<String>,
+}
+
+impl Faders {
+    fn from_json(v: Option<&Value>) -> Faders {
+        let Some(v) = v else { return Faders::default() };
+        Faders {
+            map: v
+                .get("map")
+                .and_then(Value::as_object)
+                .map(|m| m.iter().filter_map(|(k, x)| Some((k.clone(), x.as_str()?.to_owned()))).collect())
+                .unwrap_or_default(),
+            assigning: v.get("assigning").and_then(Value::as_f64).unwrap_or(0.0).clamp(0.0, 60.0) as f32,
+            selected: v.get("selected").and_then(Value::as_str).map(str::to_owned),
+            channels: v
+                .get("channels")
+                .and_then(Value::as_array)
+                .map(|a| a.iter().filter_map(|x| x.as_str().map(str::to_owned)).collect())
+                .unwrap_or_default(),
+        }
+    }
+}
+
+impl LiveState {
+    pub fn is_fresh(&self) -> bool {
+        self.updated > 0.0 && now_unix() - self.updated < STALE_AFTER_S
+    }
+
+    /// For the layout preview tool (ks-preview): parse a live.json value.
+    pub fn from_json_pub(v: &Value) -> Self {
+        Self::from_json(v, "live.json")
+    }
+
+    fn from_json(v: &Value, source: &'static str) -> Self {
+        let s = |k: &str| v.get(k).and_then(Value::as_str).map(str::to_owned);
+        let b = |k: &str| v.get(k).and_then(Value::as_bool);
+        let n = |k: &str| v.get(k).and_then(Value::as_f64);
+        let last = v.get("last").and_then(|l| {
+            Some(LastNote {
+                note: l.get("note")?.as_u64()? as u8,
+                raw: l.get("raw")?.as_u64()? as u8,
+                out: l.get("out")?.as_u64()? as u8,
+                us: l.get("us").and_then(Value::as_u64).map(|u| u.min(u32::MAX as u64) as u32),
+            })
+        });
+        LiveState {
+            version: v.get("v").and_then(Value::as_u64).unwrap_or(0),
+            connected: b("connected"),
+            pedal_mode: s("mode"),
+            pedal_value: n("pedal").unwrap_or(0.0).clamp(0.0, 127.0) as u8,
+            una_corda: b("una_corda"),
+            touch: s("touch").or_else(|| s("touch_mode")),
+            ones: s("ones").or_else(|| s("ones_mode")),
+            last,
+            mega: Mega::from_json(v.get("mega")),
+            half_pedal: b("half_pedal"),
+            half_depth: n("half_depth").unwrap_or(80.0).clamp(1.0, 127.0) as u8,
+            half_knob: n("half_knob").map(|v| v.clamp(0.0, 127.0) as u8),
+            debounce: b("debounce"),
+            bounces: v.get("bounces").and_then(Value::as_u64).unwrap_or(0),
+            release_ms: v.get("release_ms").and_then(Value::as_u64).map(|m| m.min(1000) as u16),
+            controls: v
+                .get("controls")
+                .and_then(Value::as_object)
+                .map(|m| {
+                    m.iter()
+                        .filter_map(|(k, x)| Some((k.clone(), x.as_u64()?.min(127) as u8)))
+                        .collect()
+                })
+                .unwrap_or_default(),
+            reading: n("reading").unwrap_or(0.0).clamp(0.0, 60.0) as f32,
+            button: v.get("button").and_then(|b| {
+                Some(Pressed { label: b.get("label")?.as_str()?.to_owned(), t: b.get("t")?.as_f64()? })
+            }),
+            faders: Faders::from_json(v.get("faders")),
+            updated: n("updated").unwrap_or(0.0),
+            source,
+        }
+    }
+}
+
+pub fn now_unix() -> f64 {
+    SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs_f64()).unwrap_or(0.0)
+}
+
+fn router_dir() -> PathBuf {
+    let base = std::env::var_os("LOCALAPPDATA").map(PathBuf::from).unwrap_or_default();
+    base.join("CodexPedalModes")
+}
+
+fn read_json(path: &PathBuf) -> Option<Value> {
+    // The router replaces the file atomically; a read that races with it simply
+    // fails and the next poll picks it up.
+    let text = std::fs::read_to_string(path).ok()?;
+    serde_json::from_str(text.trim_start_matches('\u{feff}')).ok()
+}
+
+/// Polls the router files at most every `POLL_EVERY` and keeps the last good state.
+pub struct LiveReader {
+    pub dir: PathBuf,
+    last_poll: Option<Instant>,
+    /// After a click the shown value is set at once; polling pauses briefly so
+    /// an older file cannot flash the previous value back.
+    hold_until: Option<Instant>,
+    pub state: LiveState,
+}
+
+impl Default for LiveReader {
+    fn default() -> Self {
+        LiveReader { dir: router_dir(), last_poll: None, hold_until: None, state: LiveState::default() }
+    }
+}
+
+impl LiveReader {
+    pub fn optimistic(&mut self, command: &crate::cmd::Command) {
+        use crate::cmd::Command::*;
+        match command {
+            PedalMode(m) => self.state.pedal_mode = Some((*m).to_owned()),
+            UnaCorda(on) => self.state.una_corda = Some(*on),
+            Touch(t) => self.state.touch = Some((*t).to_owned()),
+            MegaCurve(c) => {
+                if let Some(m) = self.state.mega.as_mut() {
+                    m.curve = c.clone();
+                }
+            }
+            MegaHires(on) => {
+                if let Some(m) = self.state.mega.as_mut() {
+                    m.hires = *on;
+                }
+            }
+            Ones(o) => self.state.ones = Some((*o).to_owned()),
+            HalfPedal(on) => self.state.half_pedal = Some(*on),
+            HalfDepth(d) => self.state.half_depth = *d,
+            Debounce(on) => self.state.debounce = Some(*on),
+            ReleaseMs(ms) => self.state.release_ms = Some(*ms),
+            ReadControls => self.state.reading = 6.0,
+            Fader(f, ch) => match ch {
+                Some(name) => {
+                    self.state.faders.map.insert(f.clone(), name.clone());
+                }
+                None => {
+                    self.state.faders.map.remove(f);
+                }
+            },
+        }
+        self.hold_until = Some(Instant::now() + HOLD_AFTER_CLICK);
+    }
+
+    pub fn poll(&mut self) {
+        if self.hold_until.map_or(false, |t| Instant::now() < t) {
+            return;
+        }
+        if self.last_poll.map_or(false, |t| t.elapsed() < POLL_EVERY) {
+            return;
+        }
+        self.last_poll = Some(Instant::now());
+        let live = self.dir.join("live.json");
+        if let Some(v) = read_json(&live) {
+            self.state = LiveState::from_json(&v, "live.json");
+            return;
+        }
+        if !live.exists() {
+            if let Some(v) = read_json(&self.dir.join("status.json")) {
+                self.state = LiveState::from_json(&v, "status.json");
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn faders_from_the_router() {
+        let v: Value = serde_json::from_str(r#"{"v":1,"updated":1,"faders":{"map":{"C2":"Perkusja Bus"},"assigning":4.5,"selected":"FX 1","channels":["FX 1","Main"]}}"#).unwrap();
+        let s = LiveState::from_json_pub(&v);
+        assert_eq!(s.faders.map.get("C2").map(String::as_str), Some("Perkusja Bus"));
+        assert_eq!((s.faders.assigning, s.faders.selected.as_deref(), s.faders.channels.len()), (4.5, Some("FX 1"), 2));
+        let old: Value = serde_json::from_str(r#"{"v":1,"updated":1}"#).unwrap();
+        assert_eq!(LiveState::from_json_pub(&old).faders, Faders::default());
+        let mut r = LiveReader::default();
+        r.optimistic(&crate::cmd::Command::Fader("C3".into(), Some("Main".into())));
+        assert_eq!(r.state.faders.map.get("C3").map(String::as_str), Some("Main"));
+    }
+
+    #[test]
+    fn parses_live_and_ignores_unknown_fields() {
+        let v: Value = serde_json::from_str(
+            r#"{"v":1,"connected":true,"mode":"sostenuto","pedal":90,"una_corda":true,
+                "touch":"heavy","ones":"context","last":{"note":60,"raw":98,"out":67},
+                "updated":123.5,"future_field":[1,2,3]}"#,
+        )
+        .unwrap();
+        let s = LiveState::from_json(&v, "live.json");
+        assert_eq!(s.version, 1);
+        assert_eq!(s.pedal_mode.as_deref(), Some("sostenuto"));
+        assert_eq!(s.pedal_value, 90);
+        assert_eq!(s.una_corda, Some(true));
+        assert_eq!(s.touch.as_deref(), Some("heavy"));
+        assert_eq!(s.last.unwrap().out, 67);
+        assert_eq!(s.half_pedal, None);
+        assert_eq!(s.half_depth, 80);
+    }
+
+    #[test]
+    fn parses_half_pedal_and_debounce() {
+        let v: Value = serde_json::from_str(
+            r#"{"v":1,"half_pedal":true,"half_depth":64,"half_knob":64,
+                "debounce":true,"bounces":3,"updated":1.0}"#,
+        )
+        .unwrap();
+        let s = LiveState::from_json(&v, "live.json");
+        assert_eq!(s.half_pedal, Some(true));
+        assert_eq!(s.half_depth, 64);
+        assert_eq!(s.half_knob, Some(64));
+        assert_eq!(s.debounce, Some(true));
+        assert_eq!(s.bounces, 3);
+        assert_eq!(s.release_ms, None);
+    }
+
+    #[test]
+    fn parses_release_ms() {
+        let v: Value = serde_json::from_str(r#"{"v":1,"release_ms":250,"updated":1.0}"#).unwrap();
+        assert_eq!(LiveState::from_json(&v, "live.json").release_ms, Some(250));
+        let v: Value = serde_json::from_str(r#"{"v":1,"release_ms":99999}"#).unwrap();
+        assert_eq!(LiveState::from_json(&v, "live.json").release_ms, Some(1000));
+    }
+
+    #[test]
+    fn parses_controls_and_button() {
+        let v: Value = serde_json::from_str(
+            r#"{"v":1,"controls":{"B10":64,"C9":127,"B33":300,"bad":"x"},
+                "button":{"label":"C53","t":12.5},"updated":1.0}"#,
+        )
+        .unwrap();
+        let s = LiveState::from_json(&v, "live.json");
+        assert_eq!(s.controls.get("B10"), Some(&64));
+        assert_eq!(s.controls.get("B33"), Some(&127));
+        assert_eq!(s.controls.len(), 3);
+        let b = s.button.unwrap();
+        assert_eq!((b.label.as_str(), b.t), ("C53", 12.5));
+        let old: Value = serde_json::from_str(r#"{"v":1,"button":null}"#).unwrap();
+        let s = LiveState::from_json(&old, "live.json");
+        assert!(s.controls.is_empty() && s.button.is_none());
+    }
+
+    #[test]
+    fn falls_back_to_status_json_names() {
+        let v: Value = serde_json::from_str(
+            r#"{"connected":true,"mode":"sustain","una_corda":false,
+                "touch_mode":"acoustic","ones_mode":"ppp","updated":1.0}"#,
+        )
+        .unwrap();
+        let s = LiveState::from_json(&v, "status.json");
+        assert_eq!(s.touch.as_deref(), Some("acoustic"));
+        assert_eq!(s.ones.as_deref(), Some("ppp"));
+        assert_eq!(s.pedal_value, 0);
+        assert!(s.last.is_none());
+    }
+}
+
+#[cfg(test)]
+mod mega_tests {
+    use super::*;
+    use serde_json::json;
+
+    fn state() -> LiveState {
+        LiveState::from_json_pub(&json!({
+            "mega": {"connected": true, "curve": "fortepian", "black": 1.28, "minimum": 2, "hires": false,
+                     "curves": {"fortepian": {"kotwica_us": 6500, "kotwica_velocity": 100},
+                                "fortepian-pelny": {"kotwica_us": 6500, "kotwica_velocity": 120}}},
+            "last": {"note": 60, "raw": 69, "out": 69, "us": 15200}
+        }))
+    }
+
+    #[test]
+    fn mega_formula_matches_the_router() {
+        let s = state();
+        let m = s.mega.as_ref().unwrap();
+        assert!((m.velocity(6500.0, false) - 100.0).abs() < 1e-9);
+        assert!((m.velocity(13000.0, false) - 75.0).abs() < 1e-9);
+        assert!((m.velocity(6500.0 * 1.28, true) - 100.0).abs() < 1e-9);
+        assert_eq!(m.velocity(1e7, false), 2.0);
+        assert_eq!(m.velocity(10.0, false), 127.0);
+        assert_eq!(m.next_curve(), "fortepian-pelny");
+        assert_eq!(s.last.as_ref().unwrap().us, Some(15200));
+    }
+
+    #[test]
+    fn calibrated_points_match_the_router() {
+        // te same liczby co test_curve_points_match_python w test_mega_input.py
+        let s = LiveState::from_json_pub(&json!({"mega": {"connected": true, "curve": "punkty", "black": 1.28, "minimum": 2,
+            "curves": {"punkty": {"punkty": [[7000, 112], [14000, 64], [21000, 33]]}}}}));
+        let m = s.mega.as_ref().unwrap();
+        assert!((m.velocity(14000.0, false) - 64.0).abs() < 1e-9);
+        assert!((m.velocity(7000.0, false) - 112.0).abs() < 1e-9);
+        assert!((m.velocity(21000.0, false) - 33.0).abs() < 1e-9);
+        assert!((m.velocity(5600.0, false) - 127.0).abs() < 1e-9);          // dalej nachyleniem gornego odcinka, obciete
+        assert!((m.velocity(10000.0, false) - 87.300488).abs() < 1e-5);
+        assert!((m.velocity(30000.0, false) - 5.730272).abs() < 1e-5);
+        assert!((m.velocity(14000.0 * 1.28, true) - 64.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn naturalna_from_mega_times_matches_the_router() {
+        // te same liczby co mega_input.naturalna_value (test_naturalna_from_mega_times)
+        let s = LiveState::from_json_pub(&json!({"mega": {"connected": true, "curve": "naturalna", "black": 1.28, "minimum": 2,
+            "curves": {"naturalna": {"naturalna": {"K": 131.7, "tau_us": 460, "lo": 2, "hi": 118, "floor": 10, "top": 127,
+                                                   "g": 1.7, "pivot": 100}},
+                       "fortepian": {"kotwica_us": 6500, "kotwica_velocity": 100}}}}));
+        let m = s.mega.as_ref().unwrap();
+        let c = &m.curves.iter().find(|c| c.0 == "naturalna").unwrap().1;
+        for (us, want) in [(14775.0, 82.1749740207731), (32720.0, 28.711929746043555), (70000.0, 7.5047124348800685),
+                           (10000.0, 110.53146522885514), (6008.0, 127.74601207504116)] {
+            assert!((c.value(us) - want).abs() < 1e-9, "{us}");
+        }
+        assert_eq!(m.velocity(6008.0, false), 127.0);
+        assert!((m.velocity(14775.0 * 1.28, true) - 82.1749740207731).abs() < 1e-9);
+        assert_eq!(m.next_curve(), "fortepian");
+    }
+
+    #[test]
+    fn mega_health_from_the_router() {
+        let s = LiveState::from_json_pub(&json!({"mega": {"connected": false, "curve": "fortepian", "health": {
+            "state": "mostek", "message": "Mega nie odpowiada: odlacz kabel USB Megi na 5 s i podlacz z powrotem",
+            "fw": "2.0", "crc_errors": 1, "lost": 2, "fixed_stuck": 1,
+            "problems": ["Linia Y2 milczy (D4, Bb4), choc reszta gra: przewod albo gniazdo"], "selftest": []}}}));
+        let h = s.mega.as_ref().unwrap().health.as_ref().unwrap();
+        assert_eq!(h.label(), Some("ODŁĄCZ USB MEGI"));
+        let tip = h.tip();
+        assert!(tip.contains("odlacz kabel USB") && tip.contains("zgubionych 2") && tip.contains("UWAGA: Linia Y2"));
+        let old = LiveState::from_json_pub(&json!({"mega": {"connected": true, "curve": "fortepian"}}));
+        assert!(old.mega.as_ref().unwrap().health.is_none());
+    }
+
+    #[test]
+    fn older_router_without_mega() {
+        let s = LiveState::from_json_pub(&json!({"touch": "naturalna"}));
+        assert!(s.mega.is_none());
+    }
+}

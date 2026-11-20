@@ -1,5 +1,6 @@
 """Testy 19.11: klawisze z Arduino Mega (mega_input.py) i ich droga przez router."""
 import json
+from pathlib import Path
 import random
 
 import mega_input
@@ -22,7 +23,9 @@ def test_anchor_and_bosendorfer_slope_on_white_keys():
 
 
 def test_full_curve_only_moves_the_anchor():
-    s = settings("fortepian-pelny")
+    s = settings("fortepian")
+    s["krzywe"]["fortepian-pelny"] = {"kotwica_us": 6500, "kotwica_velocity": 120}
+    s["krzywa"] = "fortepian-pelny"
     assert note_velocity(60, 6500, s) == 120
     assert note_velocity(60, 13000, s) == 95
 
@@ -56,20 +59,20 @@ def test_parse_line():
 
 
 def test_settings_file(tmp_path):
-    assert load_settings(tmp_path / "brak.json")["krzywa"] == "fortepian"
+    assert load_settings(tmp_path / "brak.json")["krzywa"] == "naturalna"      # 20.11: domyslna Naturalna
     f = tmp_path / "m.json"
     f.write_text("{zepsute", encoding="utf-8")
-    assert load_settings(f)["krzywa"] == "fortepian"
+    assert load_settings(f)["krzywa"] == "naturalna"
     f.write_text(json.dumps({"krzywa": "nie-ma-takiej", "minimum": 5}), encoding="utf-8")
     s = load_settings(f)
-    assert s["krzywa"] == "fortepian" and s["minimum"] == 5
+    assert s["krzywa"] == "naturalna" and s["minimum"] == 5
 
 
 def test_mega_notes_keep_their_velocity_through_the_router():
     m = PedalMapper()
     m.velocity_map = ([1] * 128, [1] * 128)        # mapa czucia, ktora wszystko by splaszczyla
     on = m.mega_message("on", 60, 6500)
-    assert m.transform(on, exact=True) == [bytes((0x90, 60, 100))]
+    assert m.transform(on, exact=True) == [bytes((0x90, 60, 126))]
     assert 60 in m.active_notes[0]
     off = m.mega_message("off", 60, 12500)
     assert m.transform(off, exact=True) == [bytes((0x80, 60, 89))]
@@ -81,7 +84,7 @@ def test_mega_notes_keep_their_velocity_through_the_router():
 def test_whole_range_a0_to_c8_plays():
     m = PedalMapper()
     for note in (21, 60, 108):
-        assert m.transform(m.mega_message("on", note, 13000), exact=True) == [bytes((0x90, note, 75))]
+        assert m.transform(m.mega_message("on", note, 13000), exact=True) == [bytes((0x90, note, 93))]
 
 
 def test_c53_cycles_mega_curves_only_while_the_mega_plays():
@@ -90,10 +93,10 @@ def test_c53_cycles_mega_curves_only_while_the_mega_plays():
     m.touch_mode = "naturalna"
     m.mega_active = True
     assert m.transform([0xC0, TOUCH_CYCLE_BUTTON]) == []
-    assert m.mega_settings["krzywa"] == "fortepian-pelny" and m.mega_dirty
+    assert m.mega_settings["krzywa"] == "fortepian" and m.mega_dirty
     assert m.touch_mode == "naturalna"
     m.transform([0xC0, TOUCH_CYCLE_BUTTON])
-    assert m.mega_settings["krzywa"] == "fortepian"
+    assert m.mega_settings["krzywa"] == "naturalna"
     m.mega_active = False
     m.transform([0xC0, TOUCH_CYCLE_BUTTON])
     assert m.touch_mode == "szeroka"
@@ -106,7 +109,7 @@ def test_debounce_does_not_touch_mega_notes():
     m.transform(m.mega_message("on", 60, 6500), exact=True)
     assert m.transform(m.mega_message("off", 60, 12500), exact=True) == [bytes((0x80, 60, 89))]
     assert not m.pending_offs
-    assert m.transform(m.mega_message("on", 60, 6500), exact=True) == [bytes((0x90, 60, 100))]
+    assert m.transform(m.mega_message("on", 60, 6500), exact=True) == [bytes((0x90, 60, 126))]
 
 
 def test_module_constants():
@@ -150,7 +153,7 @@ def test_hires_split_follows_the_cc88_standard():
 def test_hires_off_sends_plain_notes_and_b16_is_on_cc89():
     from pedal_router import PLAY, destination
     m = PedalMapper()
-    assert m.transform(m.mega_message("on", 60, 7000), exact=True) == [bytes((0x90, 60, 97))]
+    assert m.transform(m.mega_message("on", 60, 7000), exact=True) == [bytes((0x90, 60, 125))]
     out = m.transform([0xB0, 92, 40])
     assert out == [bytes((0xB0, 89, 40))] and destination(out[0]) == PLAY
 
@@ -432,3 +435,33 @@ def test_reader_survives_a_crashing_flasher_and_bad_callbacks():
     r, *_ = make_reader([[(0.1, b"\x01\x02" * 100)], [(0.1, hello(0)), (0.5, life(2000, 1))]], flasher=boom)
     run_reader(r)
     assert calls and "blad wgrywania" in r.flash_log[0] and r.proto == 2
+
+
+# --- 20.11: Naturalna z czasu Megi ----------------------------------------------------------------------------
+def test_naturalna_is_the_router_curve_made_continuous():
+    """Ta sama krzywa co velocity-map.naturalna.json (zielona plytka): kazda wartosc surowego 2..118 zgadza sie."""
+    table = json.loads(Path(__file__).with_name("velocity-map.naturalna.json").read_text(encoding="utf-8"))["white"]
+    p = mega_input.NATURALNA_MEGA
+    for r in range(2, 119):
+        assert min(127, round(mega_input.naturalna_raw_value(p, r))) == table[r], r
+
+
+def test_naturalna_from_mega_times():
+    s = settings("naturalna")
+    v = lambda us, n=60: note_velocity(n, us, s)  # noqa: E731
+    assert v(6008) == 127                   # najmocniejsze 1% Twojej gry = fff, jak p99 w Naturalnej
+    assert v(14775) == 82                   # mediana = 82 (w Naturalnej mediana bialych 81)
+    assert v(32720) == 29 and v(44328) == 17
+    assert v(int(14775 * 1.28), 61) == 82   # czarne: ta sama skala po przeliczniku
+    seq = [v(us) for us in range(3000, 400_000, 211)]
+    assert seq == sorted(seq, reverse=True)
+    assert v(120_000) == 2 and 2 < v(70_000) < 10   # wolniej niz prog zielonej plytki: dalej lagodnie w dol
+
+
+def test_bad_curves_in_the_file_are_dropped(tmp_path):
+    f = tmp_path / "m.json"
+    f.write_text(json.dumps({"krzywa": "zla", "krzywe": {
+        "zla": {"naturalna": {"K": 100, "tau_us": 460, "lo": 2, "hi": 118, "g": 1.7, "pivot": 100}},
+        "pusta": {"punkty": [[1000, 100]]}, "dobra": {"kotwica_us": 6500, "kotwica_velocity": 90}}}))
+    s = load_settings(f)
+    assert list(s["krzywe"]) == ["dobra"] and s["krzywa"] == "dobra"
