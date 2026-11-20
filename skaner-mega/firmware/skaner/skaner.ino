@@ -3,7 +3,7 @@
 // Budowa matrycy (dwie niezalezne polowki):
 //   dol  A0..C4  (MIDI 21..60):  linie grup X1..X10 (piny 32..41), linie klawiszy Z1..Z8 (A0..A7 = PF0..PF7)
 //   gora C#4..C8 (MIDI 61..108): linie grup W1..W10 (piny 22..31) oraz Y9, Y10 (piny 50, 51),
-//                                linie klawiszy Y1..Y8 (piny 42..49 = PL7..PL0)
+//                                linie klawiszy Y1..Y8 (piny 42..49 = PL7..PL0), Y2 od 20.11 na A8 (PK0)
 //   grupa g w dole:  pierwszy styk = X(2g+2), drugi = X(2g+1), klawisz = 21 + 8g + k (k = Z(k+1))
 //   grupa g w gorze: pierwszy styk = W(2g+2), drugi = W(2g+1) dla g = 0..4; g = 5: pierwszy Y9, drugi Y10
 //   Dioda: sterujemy linia grupy stanem NISKIM, czytamy linie klawiszy (podciagniete do 5 V).
@@ -109,6 +109,7 @@ void setup() {
   for (uint8_t k = 0; k < 8; k++) {
     uint8_t pz = A0 + k, py = 42 + k;
     pinMode(pz, INPUT_PULLUP); pinMode(py, INPUT_PULLUP);
+    pinMode(A8, INPUT_PULLUP);          // Y2 (od 20.11)
     uint8_t mz = digitalPinToBitMask(pz), my = digitalPinToBitMask(py);
     fBit[k] = 0; lBit[k] = 0;
     while (!(mz & 1)) { mz >>= 1; fBit[k]++; }
@@ -133,26 +134,29 @@ void setup() {
   TCCR1A = 0; TCCR1B = (1 << CS11); TCNT1 = 0;   // Timer1: zegar / 8 = 2 MHz
   Serial.begin(250000);   // 20.11: 250 kbit zamiast 1 Mbit: mostek CH340 zawieszal sie przy 1 Mbit
   delay(200);
-  Serial.println(F("SKANER v1.1"));
+  Serial.println(F("SKANER v1.2"));
 }
 
 // Jeden krok skanu, rozwiniety w czasie kompilacji: stale rejestry = pojedyncze instrukcje sbi/cbi.
 // L*: linia dolnej polowki (X), U*: gornej (W/Y9/Y10). LG/LC i UG/UC: grupa i styk (0 pierwszy, 1 drugi).
+// 20.11: przewod Y2 (D4, Bb4, Gb5, D6, Bb6, Gb7) przeniesiony z pinu 43 na A8 (PK0): na 43 przestal dochodzic sygnal.
+// Bit 1 (klawisz k = 1) gornej polowki bierzemy z PINK bit 0 zamiast z PINL.
+#define Y2FIX(cu, kk) (uint8_t)(((cu) & ~0x02) | (((kk) & 0x01) << 1))
 #define STEP2(s, LD, LP, LB, LG, LC, UD, UP, UB, UG, UC) do { \
     LP &= ~_BV(LB); LD |= _BV(LB); UP &= ~_BV(UB); UD |= _BV(UB); \
     delayMicroseconds(SETTLE_US); \
-    unsigned long t = now2(); uint8_t f = ~PINF, l = ~PINL; \
+    unsigned long t = now2(); uint8_t f = ~PINF, l = ~PINL, kk = ~PINK; \
     LD &= ~_BV(LB); LP |= _BV(LB); UD &= ~_BV(UB); UP |= _BV(UB); \
-    uint8_t cf = mapF[f], cu = mapL[l]; \
+    uint8_t cf = mapF[f], cu = Y2FIX(mapL[l], kk); \
     if (cf != seenLow[s]) update(&seenLow[s], cf, 8 * (LG), LC, t); \
     if (cu != seenUp[s]) update(&seenUp[s], cu, 40 + 8 * (UG), UC, t); \
   } while (0)
 #define STEP1(s, UD, UP, UB, UG, UC) do { \
     UP &= ~_BV(UB); UD |= _BV(UB); \
     delayMicroseconds(SETTLE_US); \
-    unsigned long t = now2(); uint8_t l = ~PINL; \
+    unsigned long t = now2(); uint8_t l = ~PINL, kk = ~PINK; \
     UD &= ~_BV(UB); UP |= _BV(UB); \
-    uint8_t cu = mapL[l]; \
+    uint8_t cu = Y2FIX(mapL[l], kk); \
     if (cu != seenUp[s]) update(&seenUp[s], cu, 40 + 8 * (UG), UC, t); \
   } while (0)
 
