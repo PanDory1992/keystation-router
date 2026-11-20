@@ -18,7 +18,7 @@ typedef struct { char port; int bit; } line_t;
 static const line_t X[10] = {{'C',5},{'C',4},{'C',3},{'C',2},{'C',1},{'C',0},{'D',7},{'G',2},{'G',1},{'G',0}};
 static const line_t W[10] = {{'A',0},{'A',1},{'A',2},{'A',3},{'A',4},{'A',5},{'A',6},{'A',7},{'C',7},{'C',6}};
 static const line_t Y9 = {'B',3}, Y10 = {'B',2};
-// linie klawiszy: Z1..Z8 = PF0..PF7; Y1..Y8 = PL7..PL0, ale Y2 od 20.11 na PK0 (A8)
+// linie klawiszy: Z1..Z8 = PF0..PF7; Y1..Y8 = PL7..PL0, ale Y2 od 20.11 wieczorem na PB1 (pin 52)
 static line_t Z[8], Y[8];
 
 static int ddr_addr(char p) {
@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
   double limit = argc > 4 ? atof(argv[4]) : 2e6;
   if (getenv("Y2_ON_43")) y2_on_43 = 1;           // stary uklad (Y2 na pinie 43 = PL6)
   for (int k = 0; k < 8; k++) { Z[k].port = 'F'; Z[k].bit = k; Y[k].port = 'L'; Y[k].bit = 7 - k; }
-  if (!y2_on_43) { Y[1].port = 'K'; Y[1].bit = 0; }
+  if (!y2_on_43) { Y[1].port = 'B'; Y[1].bit = 1; }
   elf_firmware_t fw; memset(&fw, 0, sizeof fw);
   if (elf_read_firmware(argv[1], &fw)) { fprintf(stderr, "elf?\n"); return 1; }
   avr = avr_make_mcu_by_name("atmega2560");

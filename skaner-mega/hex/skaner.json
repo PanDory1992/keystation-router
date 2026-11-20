@@ -1,7 +1,7 @@
 {
  "proto": 2,
- "wersja": "2.0",
- "build": 2026112001,
- "md5": "d3b1efe448178dfb3c1a9dfc347355de",
+ "wersja": "2.1",
+ "build": 2026112002,
+ "md5": "104d6ca98ee3c1c8dc239cf66ddb3e72",
  "opis": "Czego router oczekuje na Medze. Router sam wgrywa skaner.hex, gdy na Medze jest inny albo starszy program."
 }

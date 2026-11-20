@@ -3,7 +3,8 @@
 // Budowa matrycy (dwie niezalezne polowki):
 //   dol  A0..C4  (MIDI 21..60):  linie grup X1..X10 (piny 32..41), linie klawiszy Z1..Z8 (A0..A7 = PF0..PF7)
 //   gora C#4..C8 (MIDI 61..108): linie grup W1..W10 (piny 22..31) oraz Y9, Y10 (piny 50, 51),
-//                                linie klawiszy Y1..Y8 (piny 42..49 = PL7..PL0); Y2 od 20.11 na A8 (PK0), pin 43 pusty
+//                                linie klawiszy Y1..Y8 (piny 42..49 = PL7..PL0); Y2 od 20.11 wieczorem na pinie 52 (PB1; wczesniej A8), pin 43 pusty;
+//                                A8 wolny na pedal
 //   grupa g w dole:  pierwszy styk = X(2g+2), drugi = X(2g+1), klawisz = 21 + 8g + k (k = Z(k+1))
 //   grupa g w gorze: pierwszy styk = W(2g+2), drugi = W(2g+1) dla g = 0..4; g = 5: pierwszy Y9, drugi Y10
 //   Dioda: sterujemy linia grupy stanem NISKIM, czytamy linie klawiszy (podciagniete do 5 V).
@@ -23,7 +24,7 @@
 //   0x01 NUTA_ON   midi, us (3 B), t (4 B)         us = od zamkniecia pierwszego do drugiego styku
 //   0x02 NUTA_OFF  midi, us (3 B), t (4 B)         przy otwarciu pierwszego styku; us = od otwarcia drugiego (0 = brak)
 //   0x03 ODWROTNIE midi, t (4 B)                    drugi styk bez pierwszego (bez dzwieku)
-//   0x10 HELLO     proto, major, minor, build (4 B), flagi (bit0 mapa pinow OK, bit1 Y2 na A8)
+//   0x10 HELLO     proto, major, minor, build (4 B), flagi (bit0 mapa pinow OK, bit1 Y2 przeniesiony z 43)
 //   0x11 ZYCIE     t (4 B), skany/s (2 B), sredni skan us (2 B), najdluzszy us (2 B), przepelnienia (2 B),
 //                  odebrane polecenia (2 B), brzmiace klawisze (11 B, bit n = MIDI 21 + n)
 //   0x12 TEST      40 x licznik narastania (1 B), 5 B bitow "pin nie schodzi do zera"
@@ -32,8 +33,8 @@
 
 #include <avr/io.h>
 
-const uint8_t PROTO = 2, FW_MAJOR = 2, FW_MINOR = 0;
-const uint32_t BUILD_ID = 2026112001UL;   // ten sam numer w hex/skaner.json; router porownuje i w razie potrzeby wgrywa
+const uint8_t PROTO = 2, FW_MAJOR = 2, FW_MINOR = 1;
+const uint32_t BUILD_ID = 2026112002UL;   // ten sam numer w hex/skaner.json; router porownuje i w razie potrzeby wgrywa
 
 const uint8_t LOW_DRIVE[10] = {32, 33, 34, 35, 36, 37, 38, 39, 40, 41};          // X1..X10
 const uint8_t UP_DRIVE[12]  = {22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 50, 51};  // W1..W10, Y9, Y10
@@ -233,7 +234,7 @@ const uint8_t TEST_N = 40;
 const uint8_t TEST_PINS[TEST_N] = {
   22, 23, 24, 25, 26, 27, 28, 29, 30, 31,   // W1..W10
   32, 33, 34, 35, 36, 37, 38, 39, 40, 41,   // X1..X10
-  42, A8, 44, 45, 46, 47, 48, 49, 50, 51,   // Y1..Y10 (Y2 na A8)
+  42, 52, 44, 45, 46, 47, 48, 49, 50, 51,   // Y1..Y10 (Y2 na 52)
   A0, A1, A2, A3, A4, A5, A6, A7,           // Z1..Z8
   43, 53                                    // odniesienie: puste piny
 };
@@ -277,7 +278,7 @@ void setup1(uint8_t pin) {
 void setup() {
   for (uint8_t i = 0; i < 10; i++) setup1(LOW_DRIVE[i]);
   for (uint8_t i = 0; i < 12; i++) setup1(UP_DRIVE[i]);
-  pinMode(A8, INPUT_PULLUP);          // Y2 (od 20.11)
+  pinMode(52, INPUT_PULLUP);          // Y2 (od 20.11 wieczorem; A8 zostaje wolny na pedal)
   pinMode(43, INPUT_PULLUP);          // pusty, tylko odniesienie testu
   pinMode(53, INPUT_PULLUP);
   for (uint8_t k = 0; k < 8; k++) {
@@ -298,7 +299,7 @@ void setup() {
   }
   for (uint8_t k = 0; k < 8; k++)
     if (portInputRegister(digitalPinToPort(A0 + k)) != &PINF || portInputRegister(digitalPinToPort(42 + k)) != &PINL) mapOk = false;
-  if (portInputRegister(digitalPinToPort(A8)) != &PINK || digitalPinToBitMask(A8) != _BV(0)) mapOk = false;
+  if (portInputRegister(digitalPinToPort(52)) != &PINB || digitalPinToBitMask(52) != _BV(1)) mapOk = false;
   for (uint16_t v = 0; v < 256; v++) {
     uint8_t a = 0, b = 0;
     for (uint8_t k = 0; k < 8; k++) { a |= ((v >> fBit[k]) & 1) << k; b |= ((v >> lBit[k]) & 1) << k; }
@@ -312,12 +313,13 @@ void setup() {
 
 // Jeden krok skanu, rozwiniety w czasie kompilacji: stale rejestry = pojedyncze instrukcje sbi/cbi.
 // L*: linia dolnej polowki (X), U*: gornej (W/Y9/Y10). LG/LC i UG/UC: grupa i styk (0 pierwszy, 1 drugi).
-// Bit 1 gornej polowki (Y2) bierzemy z PINK bit 0 (A8) zamiast z PINL (pin 43 przestal dzialac 20.11).
-#define Y2FIX(cu, kk) (uint8_t)(((cu) & ~0x02) | (((kk) & 0x01) << 1))
+// Bit 1 gornej polowki (Y2) bierzemy z PINB bit 1 (pin 52) zamiast z PINL (pin 43 przestal dzialac 20.11).
+// PORTB to tez Y9/Y10 (PB3/PB2): sterujemy nimi pojedynczymi bitami, podciagniecie PB1 zostaje nietkniete.
+#define Y2FIX(cu, kk) (uint8_t)(((cu) & ~0x02) | ((kk) & 0x02))
 #define STEP2(s, LD, LP, LB, LG, LC, UD, UP, UB, UG, UC) do { \
     LP &= ~_BV(LB); LD |= _BV(LB); UP &= ~_BV(UB); UD |= _BV(UB); \
     delayMicroseconds(SETTLE_US); \
-    unsigned long t = now2(); uint8_t f = ~PINF, l = ~PINL, kk = ~PINK; \
+    unsigned long t = now2(); uint8_t f = ~PINF, l = ~PINL, kk = ~PINB; \
     LD &= ~_BV(LB); LP |= _BV(LB); UD &= ~_BV(UB); UP |= _BV(UB); \
     uint8_t cf = mapF[f], cu = Y2FIX(mapL[l], kk); \
     if (cf != seenLow[s]) update(&seenLow[s], cf, 8 * (LG), LC, t); \
@@ -326,7 +328,7 @@ void setup() {
 #define STEP1(s, UD, UP, UB, UG, UC) do { \
     UP &= ~_BV(UB); UD |= _BV(UB); \
     delayMicroseconds(SETTLE_US); \
-    unsigned long t = now2(); uint8_t l = ~PINL, kk = ~PINK; \
+    unsigned long t = now2(); uint8_t l = ~PINL, kk = ~PINB; \
     UD &= ~_BV(UB); UP |= _BV(UB); \
     uint8_t cu = Y2FIX(mapL[l], kk); \
     if (cu != seenUp[s]) update(&seenUp[s], cu, 40 + 8 * (UG), UC, t); \

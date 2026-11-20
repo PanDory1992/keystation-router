@@ -25,7 +25,7 @@ class FirmwareSim(unittest.TestCase):
     def test_hello_and_selftest_at_start(self):
         d, msgs = run.sim([], 1_200_000)
         hello = [m for _, m in msgs if isinstance(m, mp.Hello)]
-        self.assertEqual((hello[0].proto, hello[0].version, hello[0].build), (2, "2.0", 2026112001))
+        self.assertEqual((hello[0].proto, hello[0].version, hello[0].build), (2, "2.1", 2026112002))
         self.assertTrue(hello[0].flags & 1, "mapa pinow OK")
         self.assertTrue(any(isinstance(m, mp.SelfTest) for _, m in msgs))
         lives = [m for _, m in msgs if isinstance(m, mp.Life)]

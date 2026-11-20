@@ -82,7 +82,7 @@ class EndToEnd(unittest.TestCase):
             self.assertLess(abs(on[note] - dur), 200)
         self.assertEqual(sum(1 for k, *_ in got if k == "off"), 4)
         info = r.info()
-        self.assertEqual((info["fw"], info["proto"], info["crc_errors"], info["lost"]), ("2.0", 2, 0, 0))
+        self.assertEqual((info["fw"], info["proto"], info["crc_errors"], info["lost"]), ("2.1", 2, 0, 0))
         self.assertEqual(info["selftest"], [])      # w symulatorze wszystkie linie sa "puste": nic nie twierdzimy
 
     def test_mega_py_diagnoza_reads_the_scanner(self):
@@ -125,7 +125,7 @@ class EndToEnd(unittest.TestCase):
         finally:
             mega.time.time = real_time
         text = "\n".join(out)
-        self.assertIn("Skaner 2.0, protokół 2, build 2026112001, piny OK", text)
+        self.assertIn("Skaner 2.1, protokół 2, build 2026112002, piny OK", text)
         self.assertIn("Test linii", text)
         self.assertIn("zepsutych 0, zgubionych 0", text)
 

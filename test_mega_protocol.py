@@ -42,7 +42,7 @@ def test_crc_and_cobs():
 def test_frames_decode():
     d = mp.Decoder()
     msgs = d.feed(hello(0) + on(60, 7039, 117565, 1) + off(60, 25032, 553687, 2) + life(2033968, 3, {33, 90}))
-    assert msgs[0] == mp.Hello(2, 2, 0, 2026112001, 3) and msgs[0].version == "2.0"
+    assert msgs[0] == mp.Hello(2, 2, 0, 2026112001, 3) and msgs[0].version == "2.0"   # starsza ramka nadal czytana
     assert msgs[1] == mp.Event("on", 60, 7039, 117565 / 2e6)
     assert msgs[2].kind == "off" and msgs[2].us == 25032
     assert msgs[3].sounding == {33, 90} and msgs[3].scans == 7000
@@ -120,3 +120,18 @@ def test_firmware_manifest_and_constants_agree():
     assert (proto, f"{major}.{minor}") == (man["proto"], man["wersja"])
     assert hashlib.md5((HERE / "skaner-mega/hex/skaner.hex").read_bytes()).hexdigest() == man["md5"]
     assert re.search(r"TEST_N = (\d+)", ino).group(1) == str(len(mp.TEST_LINES))
+
+
+def test_v2_frame_with_byte_10_at_the_very_start_is_not_cut():
+    """20.11: HELLO skanera 2.1 ma kod COBS 0x0A; dekoder bral go za koniec linii v1 i gubil pierwsza ramke."""
+    frame = mp.build_frame(mp.T_HELLO, 0, bytes((2, 2, 1)) + (2026112002).to_bytes(4, "little") + bytes((3,)))
+    assert 0x0A in frame
+    d = mp.Decoder()
+    msgs = d.feed(frame + on(60, 9000, 5, 1))
+    assert msgs[0] == mp.Hello(2, 2, 1, 2026112002, 3) and msgs[1].note == 60 and d.crc_errors == 0
+    for n in range(1, 60):                        # kazdy bajt 10 w dowolnym miejscu ramki na starcie strumienia
+        payload = bytes([n % 256]) * 2 + bytes((10,)) * (n % 7)
+        f = mp.build_frame(mp.T_REVERSED, n, bytes((60,)) + (n * 1000003 % 2**32).to_bytes(4, "little"))
+        assert [m.kind for m in mp.Decoder().feed(f)] == ["rev"]
+    d = mp.Decoder()                              # a tekst v1 dalej dziala
+    assert d.feed(b"+ 60 12000\r\n")[0] == mp.Event("on", 60, 12000)

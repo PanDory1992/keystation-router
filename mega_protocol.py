@@ -13,7 +13,7 @@ T_NOTE_ON, T_NOTE_OFF, T_REVERSED = 0x01, 0x02, 0x03
 T_HELLO, T_LIFE, T_TEST = 0x10, 0x11, 0x12
 TEST_LINES = (["W%d" % i for i in range(1, 11)] + ["X%d" % i for i in range(1, 11)]
               + ["Y%d" % i for i in range(1, 11)] + ["Z%d" % i for i in range(1, 9)] + ["pin43", "pin53"])
-TEST_PINS = (list(range(22, 32)) + list(range(32, 42)) + [42, "A8"] + list(range(44, 52))
+TEST_PINS = (list(range(22, 32)) + list(range(32, 42)) + [42, 52] + list(range(44, 52))
              + ["A%d" % i for i in range(8)] + [43, 53])
 MAX_SEGMENT = 80          # dluzszy kawalek bez 0x00 to nie ramka (smieci albo inny program)
 
@@ -149,7 +149,7 @@ class Decoder:
                     if msg is not None:
                         out.append(msg)
                 continue
-            if b == 0x0A and self.mode != "v2":
+            if b == 0x0A and self.mode == "v1":
                 seg = bytes(self.buf)
                 self.buf.clear()
                 msg = self._text(seg)
@@ -158,6 +158,14 @@ class Decoder:
                 elif seg.strip():
                     self.garbage += len(seg) + 1
                 continue
+            if b == 0x0A and self.mode is None:
+                # 20.11: bajt 10 moze byc tez czescia ramki v2 (np. kod COBS). Koniec linii v1 tylko wtedy, gdy przed
+                # nim jest poprawna linia tekstu; inaczej to zwykly bajt ramki i czekamy na 0x00.
+                msg = self._text(bytes(self.buf))
+                if msg is not None:
+                    self.buf.clear()
+                    out.append(msg)
+                    continue
             self.buf.append(b)
             if len(self.buf) > MAX_SEGMENT:
                 self.garbage += len(self.buf)
