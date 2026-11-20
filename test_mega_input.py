@@ -59,13 +59,13 @@ def test_parse_line():
 
 
 def test_settings_file(tmp_path):
-    assert load_settings(tmp_path / "brak.json")["krzywa"] == "naturalna"      # 20.11: domyslna Naturalna
+    assert load_settings(tmp_path / "brak.json")["krzywa"] == "rowna-b"      # 20.11 wieczor: domyslna Rowna B
     f = tmp_path / "m.json"
     f.write_text("{zepsute", encoding="utf-8")
-    assert load_settings(f)["krzywa"] == "naturalna"
+    assert load_settings(f)["krzywa"] == "rowna-b"
     f.write_text(json.dumps({"krzywa": "nie-ma-takiej", "minimum": 5}), encoding="utf-8")
     s = load_settings(f)
-    assert s["krzywa"] == "naturalna" and s["minimum"] == 5
+    assert s["krzywa"] == "rowna-b" and s["minimum"] == 5
 
 
 def test_mega_notes_keep_their_velocity_through_the_router():
@@ -84,7 +84,7 @@ def test_mega_notes_keep_their_velocity_through_the_router():
 def test_whole_range_a0_to_c8_plays():
     m = PedalMapper()
     for note in (21, 60, 108):
-        assert m.transform(m.mega_message("on", note, 13000), exact=True) == [bytes((0x90, note, 93))]
+        assert m.transform(m.mega_message("on", note, 13000), exact=True) == [bytes((0x90, note, 74))]
 
 
 def test_c53_cycles_mega_curves_only_while_the_mega_plays():
@@ -93,7 +93,7 @@ def test_c53_cycles_mega_curves_only_while_the_mega_plays():
     m.touch_mode = "naturalna"
     m.mega_active = True
     assert m.transform([0xC0, TOUCH_CYCLE_BUTTON]) == []
-    assert m.mega_settings["krzywa"] == "fortepian" and m.mega_dirty
+    assert m.mega_settings["krzywa"] == "rowna-c" and m.mega_dirty
     assert m.touch_mode == "naturalna"
     m.transform([0xC0, TOUCH_CYCLE_BUTTON])
     assert m.mega_settings["krzywa"] == "naturalna"
@@ -153,7 +153,7 @@ def test_hires_split_follows_the_cc88_standard():
 def test_hires_off_sends_plain_notes_and_b16_is_on_cc89():
     from pedal_router import PLAY, destination
     m = PedalMapper()
-    assert m.transform(m.mega_message("on", 60, 7000), exact=True) == [bytes((0x90, 60, 125))]
+    assert m.transform(m.mega_message("on", 60, 7000), exact=True) == [bytes((0x90, 60, 119))]
     out = m.transform([0xB0, 92, 40])
     assert out == [bytes((0xB0, 89, 40))] and destination(out[0]) == PLAY
 
@@ -465,3 +465,43 @@ def test_bad_curves_in_the_file_are_dropped(tmp_path):
         "pusta": {"punkty": [[1000, 100]]}, "dobra": {"kotwica_us": 6500, "kotwica_velocity": 90}}}))
     s = load_settings(f)
     assert list(s["krzywe"]) == ["dobra"] and s["krzywa"] == "dobra"
+
+
+# --- 20.11 wieczor: krzywe "rowna" A, B, C (kazdy krok tak szeroki jak rozrzut odczytu) ------------------------
+def test_rowna_curves_values():
+    for name, want in [("rowna-a", [124, 99, 84, 73, 61, 49, 40, 34, 27, 21, 17, 13, 9, 6, 3, 2]),
+                       ("rowna-b", [127, 107, 90, 79, 66, 53, 43, 36, 29, 23, 18, 14, 10, 6, 3, 2]),
+                       ("rowna-c", [127, 113, 96, 83, 70, 56, 46, 38, 31, 24, 19, 15, 10, 7, 3, 2])]:
+        s = settings(name)
+        got = [note_velocity(60, ms * 1000, s) for ms in (6, 8, 10, 12, 15, 20, 26, 33, 44, 60, 80, 100, 130, 160, 200, 250)]
+        assert got == want, name
+
+
+def test_rowna_steps_are_as_wide_as_the_scatter():
+    p = mega_input.DEFAULT_CURVES["rowna-b"]["rozrzut"]
+    v = lambda us: mega_input.rozrzut_value(p, us)  # noqa: E731
+    assert abs(v(6400) - 127) < 1e-9 and abs(v(208400) - 2) < 1e-9
+    def t_of(vel):
+        lo, hi = 3000.0, 400000.0
+        for _ in range(80):
+            mid = (lo + hi) / 2
+            lo, hi = (mid, hi) if v(mid) > vel else (lo, mid)
+        return lo
+    widths = [t_of(x - 1) - t_of(x) for x in (120, 100, 80, 60, 40, 20, 10, 5, 3)]
+    assert widths == sorted(widths)                              # w dol coraz szerzej
+    # w miejscu, gdzie rozrzut sie nie zmienia, krok w log2 czasu = staly ulamek rozrzutu
+    a, b = p["a"], p["b"]
+    for ms in (8, 15, 25):
+        sigma = a * ms ** b
+        dv = v(ms * 1000 * 2 ** (sigma / 100)) - v(ms * 1000)   # 1/100 rozrzutu w log2 czasu
+        assert abs(dv + 125 / 10.88 / 100) < 0.02                  # ok. 10,9 poziomu na caly zakres
+    seq = [v(us) for us in range(3000, 400000, 173)]
+    assert seq == sorted(seq, reverse=True)
+    s = settings("rowna-b")
+    assert note_velocity(61, int(16000 * 1.28), s) == note_velocity(60, 16000, s)
+
+
+def test_rowna_bad_params_dropped():
+    assert not mega_input.curve_ok({"rozrzut": {"a": 0.04, "b": 0.76, "smax": 1, "t_top_us": 9000, "t_bot_us": 8000,
+                                                "v_top": 127, "v_bot": 2}})
+    assert mega_input.curve_ok(mega_input.DEFAULT_CURVES["rowna-a"])

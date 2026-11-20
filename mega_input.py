@@ -42,13 +42,19 @@ AVRCONF = ROOT / "skaner-mega" / "narzedzia" / "avrdude" / "etc" / "avrdude.conf
 
 # 19.11, gra 9 min: najszybsze 1% bialych 6,9 ms, czarnych 8,7 ms; mediana 15,2 / 22,8 ms.
 DEFAULT_CURVES = {
+    "rowna-a": {"rozrzut": {"a": 0.0418, "b": 0.76, "smax": 1.0, "t_top_us": 5800, "t_bot_us": 208400, "v_top": 127,
+                            "v_bot": 2}},
+    "rowna-b": {"rozrzut": {"a": 0.0418, "b": 0.76, "smax": 1.0, "t_top_us": 6400, "t_bot_us": 208400, "v_top": 127,
+                            "v_bot": 2}},
+    "rowna-c": {"rozrzut": {"a": 0.0418, "b": 0.76, "smax": 1.0, "t_top_us": 6900, "t_bot_us": 208400, "v_top": 127,
+                            "v_bot": 2}},
     "naturalna": {"naturalna": {"K": 131.7, "tau_us": 460, "lo": 2, "hi": 118, "floor": 10, "top": 127, "g": 1.7,
                                 "pivot": 100}},
     "fortepian": {"kotwica_us": 6500, "kotwica_velocity": 100},
 }
 # wysoka_rozdzielczosc: przed nuta CC88 z czescia ulamkowa velocity (Pianoteq: 14 bitow).
 # min_us (20.11): krotszy czas miedzy stykami to nie uderzenie, tylko artefakt (najszybsze prawdziwe: 5,1 ms).
-DEFAULT_SETTINGS = {"krzywa": "naturalna", "czarne_mnoznik": 1.28, "minimum": 2, "wysoka_rozdzielczosc": False,
+DEFAULT_SETTINGS = {"krzywa": "rowna-b", "czarne_mnoznik": 1.28, "minimum": 2, "wysoka_rozdzielczosc": False,
                     "min_us": 2000, "krzywe": DEFAULT_CURVES}
 
 
@@ -68,7 +74,8 @@ def load_settings(path: Path) -> dict:
     else:
         data["krzywe"] = curves
     if data["krzywa"] not in data["krzywe"]:
-        data["krzywa"] = next(iter(data["krzywe"]))
+        default = DEFAULT_SETTINGS["krzywa"]
+        data["krzywa"] = default if default in data["krzywe"] else next(iter(data["krzywe"]))
     return data
 
 
@@ -77,6 +84,10 @@ def curve_ok(c) -> bool:
     if not isinstance(c, dict):
         return False
     try:
+        if "rozrzut" in c:
+            p = c["rozrzut"]
+            return (float(p["a"]) > 0 and 0 < float(p["b"]) < 3 and float(p["smax"]) > 0
+                    and 0 < float(p["t_top_us"]) < float(p["t_bot_us"]) and float(p["v_top"]) > float(p["v_bot"]))
         if "naturalna" in c:
             p = c["naturalna"]
             return (float(p["tau_us"]) > 0 and float(p["K"]) > float(p["hi"]) > float(p["pivot"]) > float(p["lo"])
@@ -95,6 +106,8 @@ def curve_value(curve: dict, t: float) -> float:
     Kotwica: wzor Bosendorfera, +25 na kazde przepolowienie czasu. Punkty (20.11, "dopasowana"): linie miedzy
     punktami w skali log2 czasu, poza skrajnymi punktami dalej tym samym nachyleniem co skrajny odcinek."""
     t = max(1.0, float(t))
+    if "rozrzut" in curve:
+        return rozrzut_value(curve["rozrzut"], t)
     if "naturalna" in curve:
         return naturalna_value(curve["naturalna"], t)
     if "punkty" not in curve:
@@ -141,6 +154,33 @@ def naturalna_raw_value(p: dict, r: float) -> float:
 
 def naturalna_value(p: dict, t: float) -> float:
     return naturalna_raw_value(p, float(p["K"]) - t / float(p["tau_us"]))
+
+
+# 20.11 wieczor (Miki: "cala krzywa lagodna, tolerancyjna, rozciagnieta; przelicz na realnych wartosciach"):
+# krzywa "rowna". Kazdy krok velocity jest tak szeroki, jak rozrzut odczytu przy tym samym zamiarze w tym miejscu,
+# wiec kazdy stopien jest rowno pewny od ff do ppp (przeksztalcenie stabilizujace wariancje). Rozrzut zmierzony na
+# akordach z Megi (1191 nut, 354 w akordach, 20.11): log2-rozrzut = a * t_ms^b, a = 0,0418, b = 0,76 (12% przy 5-8 ms,
+# 23% przy 12-18, 34% przy 18-27, ok. 60% przy 27-70); od smax (1,0 = podwojenie czasu) dalej stale, bo powyzej
+# 40 ms jest malo danych. Konce z Twojej gry: v_bot = 2 dla najwolniejszych 0,5% (208 ms), v_top = 127 dla
+# najmocniejszych 0,5% (A, 5,8 ms), 1% (B, 6,4 ms) albo 2% (C, 6,9 ms). Caly zakres to ok. 11 rozroznialnych poziomow.
+ROZRZUT = {"a": 0.0418, "b": 0.76, "smax": 1.0, "t_bot_us": 208400, "v_top": 127, "v_bot": 2}
+
+
+def rozrzut_level(p: dict, t_ms: float) -> float:
+    """Ile 'stopni pewnosci' (rozrzutow) od zera do czasu t: rosnie z czasem."""
+    a, b, smax = float(p["a"]), float(p["b"]), float(p["smax"])
+    tc = (smax / a) ** (1 / b)                       # od tego czasu rozrzut juz nie rosnie
+    f = lambda u: -(u ** -b) / (a * b * math.log(2))  # noqa: E731  calka dx/sigma, x = log2(t)
+    if t_ms <= tc:
+        return f(t_ms)
+    return f(tc) + (math.log2(t_ms) - math.log2(tc)) / smax
+
+
+def rozrzut_value(p: dict, t_us: float) -> float:
+    s0 = rozrzut_level(p, float(p["t_top_us"]) / 1000)
+    s1 = rozrzut_level(p, float(p["t_bot_us"]) / 1000)
+    vt, vb = float(p["v_top"]), float(p["v_bot"])
+    return vt - (vt - vb) * (rozrzut_level(p, t_us / 1000) - s0) / (s1 - s0)
 
 
 def note_velocity_exact(midi: int, us: int, settings: dict) -> float:
