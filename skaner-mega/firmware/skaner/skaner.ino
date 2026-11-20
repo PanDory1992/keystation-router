@@ -25,7 +25,7 @@ const uint8_t UP_DRIVE[12]  = {22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 50, 51}; 
 const uint8_t STEPS = 12;
 // Kolejnosc w skanie: w kazdej grupie najpierw linia pierwszego styku, potem drugiego. Gdy oba styki
 // zamkna sie miedzy dwoma skanami (bardzo mocne uderzenie), pierwszy zostanie zauwazony pierwszy i nuta zagra.
-const uint8_t SETTLE_US = 3;      // do sprawdzenia na sprzecie: gdy pojawia sie "!" albo podwojne nuty, zwiekszyc
+const uint8_t SETTLE_US = 8;      // 20.11: 8 us (bylo 3): zapas na styk o wiekszym oporze (Dupont, wtyczka XH)
 const uint16_t LOCKOUT = 2000;      // po zmianie styku ignorujemy jego drgania przez 1 ms (w polowkach us)
 
 volatile uint8_t *lowDdr[10], *lowPort[10], *upDdr[12], *upPort[12];
