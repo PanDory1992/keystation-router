@@ -610,13 +610,13 @@ class PedalMapper:
             notes = self.active_notes[channel]
             is_on = status & 0xF0 == 0x90 and data[2] > 0
             key = (channel, data[1])
-            if is_on and key in self.pending_offs:
+            if is_on and key in self.pending_offs and not exact:
                 # the key let go and struck again within DEBOUNCE_S: a bounce, the note just goes on
                 del self.pending_offs[key]
                 self.bounces += 1
                 self.last_event = "bounce"
                 return []
-            if not is_on and self.debounce and data[1] in notes:
+            if not is_on and self.debounce and data[1] in notes and not exact:
                 self.off_gen += 1
                 self.pending_offs[key] = (self.off_gen, data[:3])
                 self.deferred_offs.append((channel, data[1], self.off_gen))
@@ -894,6 +894,7 @@ def run():
     read_controls = [0.0]             # until when knob/fader messages are only read (SNAPSHOT from the plugin)
     live_button = {}        # 15.11: last P10 button pressed: {"label": "C53", "t": unix time}
     bus_ref = [None]
+    mega_ref = [None]       # 20.11: MegaReader (stan Megi dla live.json i status.json)
 
     def live_snapshot():
         return {
@@ -918,6 +919,7 @@ def run():
                 "black": mapper.mega_settings.get("czarne_mnoznik", 1.0),
                 "minimum": mapper.mega_settings.get("minimum", 1),
                 "hires": bool(mapper.mega_settings.get("wysoka_rozdzielczosc")),
+                **({} if mega_ref[0] is None else {"health": mega_ref[0].info()}),   # 20.11: MEGA 2.0
             },
             "controls": dict(live_controls),
             "button": dict(live_button) or None,
@@ -1243,9 +1245,15 @@ def run():
             errors += 1
             logging.exception("MIDI callback failed")
 
+    mega_filter = mega_input.ArtifactFilter()   # 20.11: za krotki czas miedzy stykami = artefakt, nie uderzenie
+
     def mega_event(kind, note, us):
         nonlocal messages, last_input
         try:
+            if not mega_filter.accept(kind, note, us, int(mapper.mega_settings.get("min_us", 0) or 0)):
+                if kind == "on":
+                    logging.info("Mega: %s skipped, %d us between contacts is not a strike (min_us)", note, us)
+                return
             message = mapper.mega_message(kind, note, us)
             routed = dispatch(message, exact=True)
             now = time.time()
@@ -1274,7 +1282,10 @@ def run():
 
     mapper.mega_settings = mega_input.load_settings(MEGA_FILE)
     mega_mtime = [None]
-    mega_reader = mega_input.MegaReader(mega_event, mega_state, done, ROOT / "mega-off")
+    # 20.11 (MEGA 2.0): reader sam wgrywa skaner, gdy na Medze jest inny albo starszy program (hex/skaner.json)
+    mega_reader = mega_input.MegaReader(mega_event, mega_state, done, ROOT / "mega-off",
+                                        flasher=mega_input.make_flasher(), expected=mega_input.load_manifest)
+    mega_ref[0] = mega_reader
     threading.Thread(target=mega_reader.run, name="mega", daemon=True).start()
 
     try:
@@ -1408,7 +1419,8 @@ def run():
                     "touch_mode": mapper.touch_mode,
                     "mega": {"connected": mega_reader.connected, "port": mega_reader.port,
                              "events": mega_reader.events, "curve": mapper.mega_settings["krzywa"],
-                             "silent_s": round(time.time() - mega_reader.last_data, 1) if mega_reader.last_data else None},
+                             "silent_s": round(time.time() - mega_reader.last_data, 1) if mega_reader.last_data else None,
+                             "artifacts": mega_filter.count, **mega_reader.info()},
                     "monitor_port": monitor is not None,
                     "ones_mode": "context" if mapper.ones_context else "ppp",
                     "messages": messages, "sent_play": counts[PLAY], "sent_control": counts[CONTROL],

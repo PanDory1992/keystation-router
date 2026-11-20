@@ -70,7 +70,7 @@
   <text x="10" y="236" class="cap">Liczby to numery nadrukowane obok gniazd. Kółko to przewód: W3 = wtyczka W, przewód 3.</text>
 </svg>
 
-<p><b>Zmiana 20.11:</b> drugi przewód wtyczki Y (Y2) wkładasz w gniazdo <b>A8</b> (rząd ANALOG IN, zaraz za A7), nie w pin 43.</p>
+<p><b>Zmiana 20.11:</b> drugi przewód wtyczki Y (Y2) wkładasz w gniazdo <b>A8</b> (rząd ANALOG IN, zaraz za A7), nie w pin 43. Gniazdo 43 zostaje puste: skaner używa go w teście linii jako wzorca pustego pinu.</p>
 <p>Litery wtyczek to W, X, Y, Z, a nie A–D, żeby nie myliły się z pinami A0–A7 na Medze.</p>
 <p style="margin-top:18px">Wtyczka <span class="tag" style="background:var(--d)">Z</span> idzie do rzędu <b>ANALOG IN</b>, gniazda A0–A7:</p>
 <svg viewBox="0 0 900 120" role="img" aria-label="Rząd ANALOG IN, piny A0–A7 z przewodami Z1–Z8">
@@ -103,7 +103,18 @@
   <li>Przejdź całą klawiaturę: czy każdy klawisz pokazuje swoją nazwę, nic nie wisi, nic nie gra podwójnie.</li>
   <li><kbd>K</kbd> kończy i zapisuje. Na końcu: liczba nut, najszybsze i najwolniejsze uderzenie oraz ewentualne „odwrócone styki”.</li>
 </ol>
-<p>W tym kroku nie ma jeszcze dźwięku: router zacznie czytać Megę w następnym etapie.</p>
+<p>Router czyta Megę na stałe; podgląd na chwilę zabiera mu port i oddaje go po zamknięciu (także krzyżykiem).</p>
+</div>
+
+<h2>MEGA 2.0 (od 20.11): co dzieje się samo</h2>
+<div class="card">
+<ul>
+  <li><b>Router sam wgrywa skaner</b>, gdy na Medze jest inny albo starszy program (np. po teście albo rozpoznaniu). Klawiatura milknie wtedy na kilka sekund i wraca.</li>
+  <li><b>Zawieszona nuta gaśnie sama</b>: Mega co sekundę mówi, które klawisze są wciśnięte; gdy wyłączenie zginie po drodze, router je dośle.</li>
+  <li><b>Przekłamany bajt nie zagra złej nuty</b>: każda ramka ma sumę kontrolną.</li>
+  <li><b>Gdy Mega milczy</b>, router próbuje po kolei: ponowne otwarcie portu, reset, wgranie skanera. Jeśli nic nie pomoże, wtyczka Keystation Status pokaże w stopce <b>MEGA // ODŁĄCZ USB MEGI</b>: wtedy jedyne lekarstwo to odłączyć kabel USB Megi na 5 s.</li>
+  <li><code>5 - Diagnoza.bat</code>: bez wgrywania pokazuje wersję skanera, test linii (czy każdy przewód siedzi w gnieździe) i błędy łącza. Wynik zapisuje w <code>wyniki\diagnoza-*.txt</code>, który Claude może przeczytać.</li>
+</ul>
 </div>
 
 <h2>Powrót do starego stanu</h2>

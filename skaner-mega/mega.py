@@ -5,7 +5,11 @@ Uzycie (zwykle przez pliki .bat w tym folderze):
   python mega.py test          wgrywa program testowy i sprawdza, czy Mega odpowiada
   python mega.py rozpoznaj     wgrywa program rozpoznania i prowadzi przez 88 klawiszy
   python mega.py skaner        wgrywa skaner i pokazuje na zywo czas kazdego uderzenia
+  python mega.py diagnoza      bez wgrywania: wersja skanera, test linii, licznik bledow lacza (plik w wyniki/)
 Opcje: --port COM5 (zamiast szukania), --bez-wgrywania (gdy program jest juz na plytce).
+
+20.11 (MEGA 2.0): skaner nadaje ramki binarne (mega_protocol.py w folderze wyzej, ten sam co w routerze).
+Po tescie i rozpoznaniu wgrywamy z powrotem skaner, zeby klawiatura od razu grala.
 """
 import argparse
 import json
@@ -20,6 +24,9 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE / "vendor"))
 import serial  # noqa: E402  (pyserial z folderu vendor)
 from serial.tools import list_ports  # noqa: E402
+sys.path.insert(0, str(HERE.parent))
+import mega_protocol as mp  # noqa: E402  (wspolny z routerem)
+import threading  # noqa: E402
 
 AVRDUDE = HERE / "narzedzia" / "avrdude" / "bin" / "avrdude.exe"
 AVRCONF = HERE / "narzedzia" / "avrdude" / "etc" / "avrdude.conf"
@@ -347,11 +354,53 @@ def cmd_rozpoznaj(args):
     say("")
     say(f"Koniec. Klawiszy z dwoma stykami: {done} z {len(order)}.")
     say(f"Wynik: {out_json}")
-    say("Napisz do Claude, że gotowe. Klawiatura teraz nie gra, to normalne do czasu wgrania skanera.")
+    say("Napisz do Claude, że gotowe.")
     return 0
 
 
 # --- skaner: podglad na zywo --------------------------------------------------------------------------------
+def frames(s, dec):
+    """Wiadomosci z portu (None, gdy chwilowo nic)."""
+    while True:
+        chunk = s.read(max(1, s.in_waiting))
+        msgs = dec.feed(chunk) if chunk else []
+        if not msgs:
+            yield None
+        for m in msgs:
+            yield m
+
+
+def wait_hello(s, dec, seconds=8):
+    s.write(b"I")
+    t_end = time.time() + seconds
+    for m in frames(s, dec):
+        if time.time() > t_end:
+            return None
+        if isinstance(m, mp.Hello):
+            return m
+        if isinstance(m, mp.Life) and dec.mode == "v1":
+            return mp.Hello(1, 1, 0)
+
+
+def show_test(test):
+    import mega_input  # noqa: E402  (ta sama analiza co w routerze)
+    say("Test linii (licznik powrotu do jedynki, większy = dłuższy kabel; pin43 i pin53 to puste piny):")
+    row = []
+    for name, c in zip(mp.TEST_LINES, test.counts):
+        row.append(f"{name}={c}")
+        if len(row) == 10:
+            say("  " + "  ".join(row))
+            row = []
+    if row:
+        say("  " + "  ".join(row))
+    notes = mega_input.analyse_selftest(test)
+    for n in notes:
+        say("  UWAGA: " + n)
+    if not notes:
+        say("  Bez uwag.")
+    return notes
+
+
 def cmd_skaner(args):
     port = find_port(args.port)
     if not port:
@@ -361,53 +410,57 @@ def cmd_skaner(args):
     WYNIKI.mkdir(exist_ok=True)
     stamp = datetime.now().strftime("%Y%m%d-%H%M")
     log = open(WYNIKI / f"skaner-{stamp}.csv", "w", encoding="utf-8")
-    log.write("czas_pc,rodzaj,midi,us\n")
+    log.write("czas_pc,rodzaj,midi,us,czas_megi\n")
     s = serial.Serial(port, BAUD_SKANER, timeout=0.05)
-    lines = read_lines(s)
+    dec = mp.Decoder()
     say("Czekam na skaner...")
-    t_end = time.time() + 8
-    for line in lines:
-        if time.time() > t_end:
-            say("Skaner nie odpowiada. Spróbuj jeszcze raz albo napisz do Claude.")
-            return 1
-        if line and line.startswith("SKANER"):
-            break
-        if line and "BLAD" in line:
-            say("Skaner zgłasza nietypowy układ pinów płytki. Napisz do Claude.")
-            return 1
-    say("Skaner działa. Graj: każda nuta pokaże czas między stykami.")
-    say("Mniej milisekund = szybszy klawisz = głośniej. K = koniec i zapis.")
+    hello = wait_hello(s, dec)
+    if hello is None:
+        say("Skaner nie odpowiada. Spróbuj jeszcze raz albo napisz do Claude.")
+        return 1
+    say(f"Skaner {hello.version} działa (protokół {hello.proto}).")
+    if hello.proto >= 2 and not hello.flags & 1:
+        say("Skaner zgłasza nietypowy układ pinów płytki. Napisz do Claude.")
+        return 1
+    say("Graj: każda nuta pokaże czas między stykami. Mniej milisekund = szybszy klawisz = głośniej.")
+    say("K = koniec i zapis, T = test linii.")
     say("")
     keys = Keys()
-    stats, anomalies, last_h = {}, 0, ""
+    stats, anomalies, last_life = {}, 0, None
     try:
-        while True:
-            if keys.get() == "k":
+        for m in frames(s, dec):
+            c = keys.get()
+            if c == "k":
                 break
-            line = next(lines)
-            if not line:
+            if c == "t":
+                s.write(b"T")
+            if m is None:
                 continue
-            p = line.split()
             now = time.time()
-            if p[0] in "+-" and len(p) == 3:
-                midi, us = int(p[1]), int(p[2])
-                log.write(f"{now:.4f},{'on' if p[0] == '+' else 'off'},{midi},{us}\n")
-                if p[0] == "+":
-                    stats.setdefault(midi, []).append(us)
-                    say(f"  {key_name(midi):<14} {us / 1000:7.2f} ms")
-            elif p[0] == "!":
-                anomalies += 1
-                log.write(f"{now:.4f},odwrotnie,{p[1]},0\n")
-                say(f"  {key_name(int(p[1])):<14} UWAGA: drugi styk przed pierwszym (pominięte)")
-            elif p[0] == "H":
-                last_h = f"skan co {p[2]} us"
+            if isinstance(m, mp.Event):
+                tm = f"{m.t:.6f}" if m.t is not None else ""
+                if m.kind == "rev":
+                    anomalies += 1
+                    log.write(f"{now:.4f},odwrotnie,{m.note},0,{tm}\n")
+                    say(f"  {key_name(m.note):<14} UWAGA: drugi styk przed pierwszym (pominięte)")
+                    continue
+                log.write(f"{now:.4f},{m.kind},{m.note},{m.us},{tm}\n")
+                if m.kind == "on":
+                    stats.setdefault(m.note, []).append(m.us)
+                    say(f"  {key_name(m.note):<14} {m.us / 1000:7.2f} ms")
+            elif isinstance(m, mp.Life):
+                last_life = m
+            elif isinstance(m, mp.SelfTest):
+                show_test(m)
     except KeyboardInterrupt:
         pass
     s.close()
     log.close()
     say("")
     n = sum(len(v) for v in stats.values())
-    say(f"Nut: {n}, klawiszy: {len(stats)}, odwróconych styków: {anomalies}. {last_h}")
+    extra = f"skan co {last_life.scan_us} us" if last_life else ""
+    say(f"Nut: {n}, klawiszy: {len(stats)}, odwróconych styków: {anomalies}. {extra}")
+    say(f"Łącze: ramek {dec.frames}, zepsutych {dec.crc_errors}, zgubionych {dec.lost}.")
     if stats:
         allv = sorted(x for v in stats.values() for x in v)
         say(f"Najszybsze uderzenie: {allv[0] / 1000:.2f} ms, najwolniejsze: {allv[-1] / 1000:.1f} ms")
@@ -415,32 +468,114 @@ def cmd_skaner(args):
     return 0
 
 
+def cmd_diagnoza(args):
+    """Bez wgrywania: kto jest na Medze, test linii, stan lacza. Wynik tez do pliku (dla Claude)."""
+    port = find_port(args.port)
+    if not port:
+        return 1
+    WYNIKI.mkdir(exist_ok=True)
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    lines = []
+
+    def out(text=""):
+        say(text)
+        lines.append(text)
+
+    out(f"Diagnoza Megi {stamp}, port {port}")
+    s = serial.Serial(port, BAUD_SKANER, timeout=0.05)
+    dec = mp.Decoder()
+    hello = wait_hello(s, dec, 6)
+    if hello is None:
+        out(f"Na 250 kbit brak skanera (bajtów: {dec.garbage}). Sprawdzam 115200...")
+        s.close()
+        s = serial.Serial(port, BAUD, timeout=0.05)
+        buf, t_end = b"", time.time() + 3
+        while time.time() < t_end:
+            buf += s.read(max(1, s.in_waiting))
+        s.close()
+        if b"ROZPOZNANIE" in buf or b"\nE " in buf or b"\nH " in buf:
+            out("Na Medze jest program ROZPOZNANIA. Uruchom 3 - Skaner podglad.bat (router też sam go wgra).")
+        elif b"MEGA OK" in buf:
+            out("Na Medze jest program TESTOWY. Uruchom 3 - Skaner podglad.bat.")
+        elif buf:
+            out(f"Na Medze jest nieznany program ({len(buf)} bajtów). Uruchom 3 - Skaner podglad.bat.")
+        else:
+            out("Mega nic nie wysyła. Odłącz kabel USB Megi na 5 s, podłącz i uruchom diagnozę jeszcze raz.")
+    else:
+        out(f"Skaner {hello.version}, protokół {hello.proto}, build {hello.build}, piny "
+            f"{'OK' if hello.flags & 1 or hello.proto < 2 else 'NIETYPOWE'}")
+        if hello.proto >= 2:
+            s.write(b"TS")
+            t_end, test, life = time.time() + 4, None, None
+            for m in frames(s, dec):
+                if time.time() > t_end or (test and life):
+                    break
+                if isinstance(m, mp.SelfTest):
+                    test = m
+                elif isinstance(m, mp.Life):
+                    life = m
+            if life:
+                out(f"Skan: {life.scans} na sekundę, średnio {life.scan_us} us, najdłuższy {life.max_us} us, "
+                    f"przepełnień kolejki {life.overflows}, wciśnięte teraz: {sorted(life.sounding) or 'nic'}")
+            if test:
+                for n in show_test(test):
+                    lines.append("UWAGA: " + n)
+                lines.append("linie: " + json.dumps(dict(zip(mp.TEST_LINES, test.counts))))
+        s.close()
+        out(f"Łącze: ramek {dec.frames}, zepsutych {dec.crc_errors}, zgubionych {dec.lost}, śmieci {dec.garbage} B")
+    path = WYNIKI / f"diagnoza-{stamp}.txt"
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    say(f"Zapis: {path}")
+    return 0
+
+
+def keep_flag(off, stop):
+    """Odswieza plik mega-off co 2 s: router wie, ze narzedzie zyje (zamkniete krzyzykiem = plik sie starzeje)."""
+    while not stop.wait(2):
+        try:
+            os.utime(off, None)
+        except OSError:
+            pass
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("co", choices=["test", "rozpoznaj", "skaner"])
+    ap.add_argument("co", choices=["test", "rozpoznaj", "skaner", "diagnoza"])
     ap.add_argument("--port")
     ap.add_argument("--bez-wgrywania", action="store_true")
     ap.add_argument("--klawisze", help="lista nut MIDI zamiast calej klawiatury, np. 60,61,62")
     args = ap.parse_args()
     # router (pedal_router.py) czyta Mege na stale; plik mega-off kaze mu oddac port na czas tego programu
     off = HERE.parent / "mega-off"
+    stop = threading.Event()
     try:
-        off.write_text("mega.py", encoding="ascii")
+        off.write_text(f"mega.py {os.getpid()}", encoding="ascii")
+        threading.Thread(target=keep_flag, args=(off, stop), daemon=True).start()
         time.sleep(1.5)
     except OSError:
         off = None
     try:
-        return {"test": cmd_test, "rozpoznaj": cmd_rozpoznaj, "skaner": cmd_skaner}[args.co](args)
+        code = {"test": cmd_test, "rozpoznaj": cmd_rozpoznaj, "skaner": cmd_skaner,
+                "diagnoza": cmd_diagnoza}[args.co](args)
     except serial.SerialException as e:
         say(f"Problem z portem: {e}")
         say("Zamknij inne programy, które mogą używać Megi (np. Arduino IDE), i spróbuj jeszcze raz.")
-        return 1
+        code = 1
     finally:
+        if args.co in ("test", "rozpoznaj") and not args.bez_wgrywania:
+            # 20.11: bez tego Mega zostawala z programem testu/rozpoznania i klawiatura milczala (router go nie rozumie)
+            port = find_port(args.port)
+            if port:
+                say("")
+                say("Wgrywam z powrotem skaner, żeby klawiatura grała...")
+                flash(port, "skaner")
+        stop.set()
         if off is not None:
             try:
                 off.unlink()
             except OSError:
                 pass
+    return code
 
 
 if __name__ == "__main__":
