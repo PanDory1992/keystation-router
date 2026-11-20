@@ -1,0 +1,5 @@
+Diagnoza Megi 20261120-202502, port COM4
+Skaner 2.1, protokół 2, build 2026112002, piny OK
+Skan: 2 na sekundę, średnio 153 us, najdłuższy 155 us, przepełnień kolejki 0, wciśnięte teraz: nic
+linie: {"W1": 16, "W2": 16, "W3": 16, "W4": 16, "W5": 16, "W6": 24, "W7": 16, "W8": 24, "W9": 16, "W10": 16, "X1": 16, "X2": 16, "X3": 16, "X4": 16, "X5": 16, "X6": 16, "X7": 16, "X8": 16, "X9": 16, "X10": 16, "Y1": 24, "Y2": 24, "Y3": 24, "Y4": 24, "Y5": 24, "Y6": 24, "Y7": 24, "Y8": 24, "Y9": 24, "Y10": 16, "Z1": 24, "Z2": 24, "Z3": 24, "Z4": 24, "Z5": 24, "Z6": 24, "Z7": 24, "Z8": 16, "pin43": 8, "pin53": 8}
+Łącze: ramek 3, zepsutych 0, zgubionych 0, śmieci 0 B

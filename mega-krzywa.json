@@ -1,15 +1,54 @@
 {
- "krzywa": "fortepian",
+ "krzywa": "rowna-b",
  "czarne_mnoznik": 1.28,
  "minimum": 2,
+ "wysoka_rozdzielczosc": false,
+ "min_us": 2000,
  "krzywe": {
-  "fortepian": {
-   "kotwica_us": 6500,
-   "kotwica_velocity": 100
+  "rowna-a": {
+   "rozrzut": {
+    "a": 0.0418,
+    "b": 0.76,
+    "smax": 1.0,
+    "t_bot_us": 208400,
+    "v_top": 127,
+    "v_bot": 2,
+    "t_top_us": 5800
+   }
   },
-  "fortepian-pelny": {
-   "kotwica_us": 6500,
-   "kotwica_velocity": 120
+  "rowna-b": {
+   "rozrzut": {
+    "a": 0.0418,
+    "b": 0.76,
+    "smax": 1.0,
+    "t_bot_us": 208400,
+    "v_top": 127,
+    "v_bot": 2,
+    "t_top_us": 6400
+   }
+  },
+  "rowna-c": {
+   "rozrzut": {
+    "a": 0.0418,
+    "b": 0.76,
+    "smax": 1.0,
+    "t_bot_us": 208400,
+    "v_top": 127,
+    "v_bot": 2,
+    "t_top_us": 6900
+   }
+  },
+  "naturalna": {
+   "naturalna": {
+    "K": 131.7,
+    "tau_us": 460,
+    "lo": 2,
+    "hi": 118,
+    "floor": 10,
+    "top": 127,
+    "g": 1.7,
+    "pivot": 100
+   }
   }
  }
 }

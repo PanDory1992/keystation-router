@@ -1,0 +1,372 @@
+{
+ "utworzono": "20261120-0112",
+ "port": "COM4",
+ "piny": {
+  "0": {
+   "etykieta": "W1",
+   "pin_megi": 22
+  },
+  "1": {
+   "etykieta": "W2",
+   "pin_megi": 23
+  },
+  "2": {
+   "etykieta": "W3",
+   "pin_megi": 24
+  },
+  "3": {
+   "etykieta": "W4",
+   "pin_megi": 25
+  },
+  "4": {
+   "etykieta": "W5",
+   "pin_megi": 26
+  },
+  "5": {
+   "etykieta": "W6",
+   "pin_megi": 27
+  },
+  "6": {
+   "etykieta": "W7",
+   "pin_megi": 28
+  },
+  "7": {
+   "etykieta": "W8",
+   "pin_megi": 29
+  },
+  "8": {
+   "etykieta": "W9",
+   "pin_megi": 30
+  },
+  "9": {
+   "etykieta": "W10",
+   "pin_megi": 31
+  },
+  "10": {
+   "etykieta": "X1",
+   "pin_megi": 32
+  },
+  "11": {
+   "etykieta": "X2",
+   "pin_megi": 33
+  },
+  "12": {
+   "etykieta": "X3",
+   "pin_megi": 34
+  },
+  "13": {
+   "etykieta": "X4",
+   "pin_megi": 35
+  },
+  "14": {
+   "etykieta": "X5",
+   "pin_megi": 36
+  },
+  "15": {
+   "etykieta": "X6",
+   "pin_megi": 37
+  },
+  "16": {
+   "etykieta": "X7",
+   "pin_megi": 38
+  },
+  "17": {
+   "etykieta": "X8",
+   "pin_megi": 39
+  },
+  "18": {
+   "etykieta": "X9",
+   "pin_megi": 40
+  },
+  "19": {
+   "etykieta": "X10",
+   "pin_megi": 41
+  },
+  "20": {
+   "etykieta": "Y1",
+   "pin_megi": 42
+  },
+  "21": {
+   "etykieta": "Y2",
+   "pin_megi": 43
+  },
+  "22": {
+   "etykieta": "Y3",
+   "pin_megi": 44
+  },
+  "23": {
+   "etykieta": "Y4",
+   "pin_megi": 45
+  },
+  "24": {
+   "etykieta": "Y5",
+   "pin_megi": 46
+  },
+  "25": {
+   "etykieta": "Y6",
+   "pin_megi": 47
+  },
+  "26": {
+   "etykieta": "Y7",
+   "pin_megi": 48
+  },
+  "27": {
+   "etykieta": "Y8",
+   "pin_megi": 49
+  },
+  "28": {
+   "etykieta": "Y9",
+   "pin_megi": 50
+  },
+  "29": {
+   "etykieta": "Y10",
+   "pin_megi": 51
+  },
+  "30": {
+   "etykieta": "Z1",
+   "pin_megi": 54
+  },
+  "31": {
+   "etykieta": "Z2",
+   "pin_megi": 55
+  },
+  "32": {
+   "etykieta": "Z3",
+   "pin_megi": 56
+  },
+  "33": {
+   "etykieta": "Z4",
+   "pin_megi": 57
+  },
+  "34": {
+   "etykieta": "Z5",
+   "pin_megi": 58
+  },
+  "35": {
+   "etykieta": "Z6",
+   "pin_megi": 59
+  },
+  "36": {
+   "etykieta": "Z7",
+   "pin_megi": 60
+  },
+  "37": {
+   "etykieta": "Z8",
+   "pin_megi": 61
+  }
+ },
+ "na_masie": [],
+ "spoczynek": [],
+ "klawisze": {
+  "61": {
+   "nazwa": "C#4 / Db4",
+   "pierwszy": [
+    [
+     1,
+     20
+    ]
+   ],
+   "drugi": [
+    [
+     0,
+     20
+    ]
+   ],
+   "odstep_us": 22912,
+   "zdarzenia": [
+    [
+     "+",
+     1,
+     20,
+     36744980
+    ],
+    [
+     "+",
+     0,
+     20,
+     36767892
+    ],
+    [
+     "-",
+     0,
+     20,
+     37476904
+    ],
+    [
+     "-",
+     1,
+     20,
+     37513188
+    ]
+   ]
+  },
+  "63": {
+   "nazwa": "D#4 / Eb4",
+   "pierwszy": [
+    [
+     1,
+     22
+    ]
+   ],
+   "drugi": [
+    [
+     0,
+     22
+    ]
+   ],
+   "odstep_us": 18524,
+   "zdarzenia": [
+    [
+     "+",
+     1,
+     22,
+     45463304
+    ],
+    [
+     "+",
+     0,
+     22,
+     45481828
+    ],
+    [
+     "-",
+     0,
+     22,
+     46006496
+    ],
+    [
+     "-",
+     1,
+     22,
+     46055964
+    ]
+   ]
+  },
+  "69": {
+   "nazwa": "A4",
+   "pierwszy": [
+    [
+     3,
+     20
+    ]
+   ],
+   "drugi": [
+    [
+     2,
+     20
+    ]
+   ],
+   "odstep_us": 14128,
+   "zdarzenia": [
+    [
+     "+",
+     3,
+     20,
+     54320600
+    ],
+    [
+     "+",
+     2,
+     20,
+     54334728
+    ],
+    [
+     "-",
+     2,
+     20,
+     54951884
+    ],
+    [
+     "-",
+     3,
+     20,
+     54975000
+    ]
+   ]
+  },
+  "71": {
+   "nazwa": "B4 (H4)",
+   "pierwszy": [
+    [
+     3,
+     22
+    ]
+   ],
+   "drugi": [
+    [
+     2,
+     22
+    ]
+   ],
+   "odstep_us": 14136,
+   "zdarzenia": [
+    [
+     "+",
+     3,
+     22,
+     64319036
+    ],
+    [
+     "+",
+     2,
+     22,
+     64333172
+    ],
+    [
+     "-",
+     2,
+     22,
+     64871520
+    ],
+    [
+     "-",
+     3,
+     22,
+     64903428
+    ]
+   ]
+  },
+  "77": {
+   "nazwa": "F5",
+   "pierwszy": [
+    [
+     5,
+     20
+    ]
+   ],
+   "drugi": [
+    [
+     4,
+     20
+    ]
+   ],
+   "odstep_us": 18520,
+   "zdarzenia": [
+    [
+     "+",
+     5,
+     20,
+     68306696
+    ],
+    [
+     "+",
+     4,
+     20,
+     68325216
+    ],
+    [
+     "-",
+     4,
+     20,
+     68832448
+    ],
+    [
+     "-",
+     5,
+     20,
+     68859952
+    ]
+   ]
+  }
+ }
+}
