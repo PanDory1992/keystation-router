@@ -401,6 +401,9 @@ class Latency:
         self._add(t, wall, keep=True)
 
     def _add(self, t, wall, keep):
+        if self.anchor is not None and t < self.anchor[0]:
+            self.__init__()                          # 20.11: zegar Megi wystartowal od zera (reset): mierzymy od nowa
+            self.anchor = (t, wall)
         if self.anchor is None:
             return
         off = wall - (self.anchor[1] + (t - self.anchor[0]) * self.skew)
@@ -576,6 +579,7 @@ class MegaReader:
             for k in ("frames", "crc_errors", "lost", "garbage"):
                 self.totals[k] += getattr(self.decoder, k)
         dec = self.decoder = mp.Decoder()
+        self.latency = Latency()                     # 20.11: nowe polaczenie = mozliwy reset Megi, zegar od zera
         t_open = self.clock()
         last_valid = None
         got = 0

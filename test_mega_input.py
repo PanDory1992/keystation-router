@@ -505,3 +505,14 @@ def test_rowna_bad_params_dropped():
     assert not mega_input.curve_ok({"rozrzut": {"a": 0.04, "b": 0.76, "smax": 1, "t_top_us": 9000, "t_bot_us": 8000,
                                                 "v_top": 127, "v_bot": 2}})
     assert mega_input.curve_ok(mega_input.DEFAULT_CURVES["rowna-a"])
+
+
+def test_latency_restarts_when_the_mega_clock_restarts():
+    lat = mega_input.Latency()
+    lat.life(500.0, 100.0)
+    for i in range(20):
+        lat.event(500.0 + i * 0.1, 100.0 + i * 0.1 + 0.001)
+    lat.life(0.5, 103.0)                                  # reset Megi: jej zegar znowu od zera
+    for i in range(20):
+        lat.event(0.5 + i * 0.1, 103.0 + i * 0.1 + 0.001)
+    assert lat.summary()["max_ms"] < 2                    # bez poprawki: tysiace ms

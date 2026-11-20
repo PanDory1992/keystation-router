@@ -508,12 +508,20 @@ def cmd_diagnoza(args):
             s.write(b"TS")
             t_end, test, life = time.time() + 4, None, None
             for m in frames(s, dec):
-                if time.time() > t_end or (test and life):
+                if time.time() > t_end or (test and life and life.scans >= 1000):
                     break
                 if isinstance(m, mp.SelfTest):
                     test = m
-                elif isinstance(m, mp.Life):
-                    life = m
+                elif isinstance(m, mp.Life) and (m.scans >= 1000 or life is None):
+                    life = m                 # 20.11: odpowiedz na "S" liczy tylko ulamek sekundy; czekamy na pelna
+            if life is not None and life.scans < 1000:
+                t_end = time.time() + 2.5
+                for m in frames(s, dec):
+                    if time.time() > t_end:
+                        break
+                    if isinstance(m, mp.Life) and m.scans >= 1000:
+                        life = m
+                        break
             if life:
                 out(f"Skan: {life.scans} na sekundę, średnio {life.scan_us} us, najdłuższy {life.max_us} us, "
                     f"przepełnień kolejki {life.overflows}, wciśnięte teraz: {sorted(life.sounding) or 'nic'}")
