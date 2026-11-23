@@ -1,4 +1,6 @@
-Dźwięk do Głośników 0.2.1 (23.11.2026)
+Dźwięk do Głośników 0.2.2 (23.11.2026)
+0.2.2: spóźnione bloki Studio One (np. Pianoteq przy fff w basie) liczą się jako przerwy, więc „auto” uczy
+       się większego zapasu. W 0.2.1 dawały „pukpukpuk” na auto, a licznik przerw pokazywał 0.
 0.2.1: sama nigdy nie wybiera wyjścia cyfrowego (S/PDIF, HDMI). 0.2.0 brała S/PDIF i test był cichy.
 
 CO TO ROBI

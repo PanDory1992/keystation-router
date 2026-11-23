@@ -141,6 +141,12 @@ pub struct Engine {
     phase: Phase,
     last_produced: u64,
     idle_s: f64,
+    /// Kolejka opustoszała, gdy Studio One akurat nic nie dołożyło: to przerwa (spóźniony blok), chyba że
+    /// Studio One zaraz okaże się wyłączone. Rozstrzygamy przy następnych okresach.
+    pending_gap: bool,
+    /// Czy po zebraniu zapasu wyrzucić nadmiar: tak na starcie i po ciszy Studio One, nie po zwykłej przerwie
+    /// (wtedy spóźnione bloki przychodzą naraz i wyrzucenie ich to drugie „puk”).
+    prime_trim: bool,
     tone_left: usize,
     tone_pos: usize,
     pub stats: Stats,
@@ -178,6 +184,8 @@ impl Engine {
             phase: Phase::Priming,
             last_produced: u64::MAX,
             idle_s: 0.0,
+            pending_gap: false,
+            prime_trim: true,
             tone_left: 0,
             tone_pos: 0,
             stats: Stats::default(),
@@ -217,16 +225,28 @@ impl Engine {
         self.last_produced = produced;
         let idle = self.idle_s > IDLE_S;
         self.stats.idle = idle;
+        if idle {
+            self.prime_trim = true;
+        }
+        if self.pending_gap {
+            if idle {
+                self.pending_gap = false; // Studio One przestało grać: to nie była przerwa
+            } else if host_moved {
+                self.pending_gap = false;
+                self.count_gap(auto);
+            }
+        }
 
         let mut fill = src.frames();
         let mut fill_s = fill as f64 / self.host_rate;
 
         if self.phase == Phase::Priming {
             if fill_s + 1e-9 >= target {
-                // zbieranie sprawdzamy raz na okres, więc zapas mógł przeskoczyć cel nawet o cały okres:
-                // nadmiar od razu precz (to start albo i tak przerwa), żeby regulator nie odrabiał go minutami
+                // zbieranie sprawdzamy raz na okres, więc na starcie zapas mógł przeskoczyć cel nawet o cały
+                // okres: wtedy nadmiar precz, żeby regulator nie odrabiał go minutami. Po zwykłej przerwie nie.
                 let keep = (target * self.host_rate).round() as usize;
-                if fill > keep {
+                let trim = std::mem::replace(&mut self.prime_trim, false);
+                if trim && fill > keep {
                     src.skip(fill - keep);
                     fill = src.frames();
                     fill_s = fill as f64 / self.host_rate;
@@ -259,10 +279,12 @@ impl Engine {
         if fill < need {
             self.silence(out);
             self.phase = Phase::Priming;
-            if host_moved && produced > 0 {
-                self.stats.gaps += 1;
-                if auto {
-                    self.stats.auto_extra_s = (self.stats.auto_extra_s + AUTO_STEP_S).min(AUTO_MAX_S);
+            self.prime_trim = false;
+            if produced > 0 && !idle {
+                if host_moved {
+                    self.count_gap(auto);
+                } else {
+                    self.pending_gap = true;
                 }
             }
             self.finish_stats(fill_s);
@@ -285,6 +307,13 @@ impl Engine {
         }
         self.write_out(out);
         self.finish_stats(fill_s);
+    }
+
+    fn count_gap(&mut self, auto: bool) {
+        self.stats.gaps += 1;
+        if auto {
+            self.stats.auto_extra_s = (self.stats.auto_extra_s + AUTO_STEP_S).min(AUTO_MAX_S);
+        }
     }
 
     fn finish_stats(&mut self, fill_s: f64) {
@@ -352,6 +381,9 @@ mod tests {
         block: usize,
         jitter_s: f64,
         host_jitter_s: f64,
+        /// Okresowe zacięcia Studio One: (co ile s, ile s). Bloki nie giną, przychodzą później naraz
+        /// (tak robi Studio One, gdy Pianoteq przy fff w basie liczy dłużej).
+        host_spikes: Option<(f64, f64)>,
         target_s: f64,
         signal: Box<dyn FnMut(u64) -> f32>,
     }
@@ -395,6 +427,13 @@ mod tests {
                 th += host_dt;
                 // spóźniony blok Studio One przychodzi później, ale następne trzymają swój rytm
                 th_wake = (th + rng.next() * sim.host_jitter_s).max(th_wake);
+                if let Some((every, len)) = sim.host_spikes {
+                    let k = (th / every).floor();
+                    let (a, b) = (k * every, k * every + len);
+                    if th >= a && th < b && k > 0.0 {
+                        th_wake = th_wake.max(b);
+                    }
+                }
             } else {
                 if !(td_wake >= dev_pause.0 && td_wake < dev_pause.1) {
                     // po zacięciu karta oddaje zaległe okresy naraz (tak robi Windows po wznowieniu)
@@ -412,7 +451,7 @@ mod tests {
     }
 
     fn sim(host_drift: f64, dev_drift: f64, target_s: f64, signal: Box<dyn FnMut(u64) -> f32>) -> Sim {
-        Sim { host_rate: 44_100.0, dev_rate: 48_000.0, host_drift, dev_drift, block: 128, jitter_s: 0.001, host_jitter_s: 0.0005, target_s, signal }
+        Sim { host_rate: 44_100.0, dev_rate: 48_000.0, host_drift, dev_drift, block: 128, jitter_s: 0.001, host_jitter_s: 0.0005, host_spikes: None, target_s, signal }
     }
 
     fn after(v: &[(f64, f64)], t0: f64) -> impl Iterator<Item = f64> + '_ {
@@ -534,6 +573,28 @@ mod tests {
         assert_eq!(run2.eng.stats.gaps, gaps_total, "przerwy dalej rosną po nauczeniu zapasu");
         assert!(run2.eng.stats.auto_extra_s < AUTO_MAX_S);
         eprintln!("[pomiar] bloki spóźnione do 10 ms: {} przerw na starcie, potem 0; auto-zapas urósł o {:.0} ms", gaps_total, run2.eng.stats.auto_extra_s * 1e3);
+    }
+
+    /// 23.11, zgłoszenie Mikiego: przy fff w basie Geniusy pękają „pukpukpuk” na auto, a na ręcznym zapasie nie.
+    /// Przyczyna: Studio One spóźnia blok o kilka ms (Pianoteq liczy dłużej), kolejka pustoszeje, a 0.2.1
+    /// brała to za ciszę Studio One (w ostatnim okresie nic nie przyszło): przerwa niewidoczna, auto nie rośnie.
+    #[test]
+    fn late_studio_one_blocks_are_gaps_and_teach_the_auto_cushion() {
+        // karta 44,1 kHz, okres 128 ramek (2,9 ms) jak u Mikiego; Studio One staje na 9 ms co 1,5 s
+        let mut s = sim(0.0, 10e-6, 0.0, Box::new(|_| 0.0));
+        s.dev_rate = 44_100.0;
+        s.host_spikes = Some((1.5, 0.009));
+        let run = simulate(&mut s, 60.0, 128, (-1.0, -1.0), (-1.0, -1.0));
+        let st = &run.eng.stats;
+        assert!(st.gaps >= 1, "spóźnienia Studio One niewidoczne jako przerwy");
+        assert!(st.auto_extra_s >= 0.004, "auto-zapas nie urósł: {:.1} ms", st.auto_extra_s * 1e3);
+        // po nauczeniu: w drugiej połowie już bez przerw
+        let mut s2 = sim(0.0, 10e-6, 0.0, Box::new(|_| 0.0));
+        s2.dev_rate = 44_100.0;
+        s2.host_spikes = Some((1.5, 0.009));
+        let run2 = simulate(&mut s2, 120.0, 128, (-1.0, -1.0), (-1.0, -1.0));
+        assert_eq!(run2.eng.stats.gaps, st.gaps, "przerwy dalej rosną po nauczeniu zapasu");
+        eprintln!("[pomiar] Studio One staje na 9 ms co 1,5 s: {} przerw, potem 0; auto-zapas {:.0} ms", st.gaps, (AUTO_BASE_S + st.auto_extra_s) * 1e3);
     }
 
     #[test]
