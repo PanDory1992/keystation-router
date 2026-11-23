@@ -486,8 +486,12 @@ def test_rowna_ax_is_a_with_measured_black_key_multiplier():
     # czarny z czasem 1,14 raza dluzszym gra tak samo jak bialy
     for us in (6000, 10_000, 20_000, 60_000):
         assert note_velocity(61, int(us * 1.14), s_ax) == note_velocity(60, us, s_ax)
-    assert note_velocity(61, 10_000, s_ax) == 93          # A (1,28): 101, bez mnoznika: 84
-    assert note_velocity(61, 10_000, s_a) == 101
+    assert note_velocity(61, 10_000, s_ax) == 93          # dawne 1,28: 101, bez mnoznika: 84
+    assert note_velocity(61, 10_000, s_a) == 93           # 23.11: A, B, C tez 1,14
+    for name in ("rowna-a", "rowna-ax", "rowna-b", "rowna-c"):
+        assert mega_input.DEFAULT_CURVES[name]["rozrzut"]["czarne_mnoznik"] == 1.14
+    s_n = settings("naturalna")                           # Naturalna zostaje przy wspolnym 1,28
+    assert note_velocity(61, 12_800, s_n) == note_velocity(60, 10_000, s_n)
     assert "rowna-x" not in mega_input.DEFAULT_CURVES
 
 
@@ -518,7 +522,7 @@ def test_rowna_steps_are_as_wide_as_the_scatter():
     seq = [v(us) for us in range(3000, 400000, 173)]
     assert seq == sorted(seq, reverse=True)
     s = settings("rowna-b")
-    assert note_velocity(61, int(16000 * 1.28), s) == note_velocity(60, 16000, s)
+    assert note_velocity(61, int(16000 * 1.14), s) == note_velocity(60, 16000, s)   # 23.11: 1,14
 
 
 def test_rowna_bad_params_dropped():

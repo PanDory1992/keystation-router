@@ -13,7 +13,8 @@
     "t_bot_us": 208400,
     "v_top": 127,
     "v_bot": 2,
-    "t_top_us": 5800
+    "t_top_us": 5800,
+    "czarne_mnoznik": 1.14
    }
   },
   "rowna-ax": {
@@ -36,7 +37,8 @@
     "t_bot_us": 208400,
     "v_top": 127,
     "v_bot": 2,
-    "t_top_us": 6400
+    "t_top_us": 6400,
+    "czarne_mnoznik": 1.14
    }
   },
   "rowna-c": {
@@ -47,7 +49,8 @@
     "t_bot_us": 208400,
     "v_top": 127,
     "v_bot": 2,
-    "t_top_us": 6900
+    "t_top_us": 6900,
+    "czarne_mnoznik": 1.14
    }
   },
   "naturalna": {
