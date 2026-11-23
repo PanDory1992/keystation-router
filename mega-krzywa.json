@@ -1,5 +1,5 @@
 {
- "krzywa": "rowna-b",
+ "krzywa": "rowna-ax",
  "czarne_mnoznik": 1.28,
  "minimum": 2,
  "wysoka_rozdzielczosc": false,
@@ -14,6 +14,18 @@
     "v_top": 127,
     "v_bot": 2,
     "t_top_us": 5800
+   }
+  },
+  "rowna-ax": {
+   "rozrzut": {
+    "a": 0.0418,
+    "b": 0.76,
+    "smax": 1.0,
+    "t_bot_us": 208400,
+    "v_top": 127,
+    "v_bot": 2,
+    "t_top_us": 5800,
+    "czarne_mnoznik": 1.14
    }
   },
   "rowna-b": {

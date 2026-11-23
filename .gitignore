@@ -29,3 +29,7 @@ TECZKA-VELOCITY-*/
 # skaner Mega: narzedzia (avrdude.exe) i cache
 skaner-mega/narzedzia/
 skaner-mega/**/__pycache__/
+
+# Stan suwakow (zapisuje router) i kopie calego repo
+controls.json
+*.bundle

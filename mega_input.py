@@ -44,6 +44,8 @@ AVRCONF = ROOT / "skaner-mega" / "narzedzia" / "avrdude" / "etc" / "avrdude.conf
 DEFAULT_CURVES = {
     "rowna-a": {"rozrzut": {"a": 0.0418, "b": 0.76, "smax": 1.0, "t_top_us": 5800, "t_bot_us": 208400, "v_top": 127,
                             "v_bot": 2}},
+    "rowna-ax": {"rozrzut": {"a": 0.0418, "b": 0.76, "smax": 1.0, "t_top_us": 5800, "t_bot_us": 208400, "v_top": 127,
+                             "v_bot": 2, "czarne_mnoznik": 1.14}},
     "rowna-b": {"rozrzut": {"a": 0.0418, "b": 0.76, "smax": 1.0, "t_top_us": 6400, "t_bot_us": 208400, "v_top": 127,
                             "v_bot": 2}},
     "rowna-c": {"rozrzut": {"a": 0.0418, "b": 0.76, "smax": 1.0, "t_top_us": 6900, "t_bot_us": 208400, "v_top": 127,
@@ -87,7 +89,8 @@ def curve_ok(c) -> bool:
         if "rozrzut" in c:
             p = c["rozrzut"]
             return (float(p["a"]) > 0 and 0 < float(p["b"]) < 3 and float(p["smax"]) > 0
-                    and 0 < float(p["t_top_us"]) < float(p["t_bot_us"]) and float(p["v_top"]) > float(p["v_bot"]))
+                    and 0 < float(p["t_top_us"]) < float(p["t_bot_us"]) and float(p["v_top"]) > float(p["v_bot"])
+                    and float(p.get("czarne_mnoznik", 1.0)) > 0)
         if "naturalna" in c:
             p = c["naturalna"]
             return (float(p["tau_us"]) > 0 and float(p["K"]) > float(p["hi"]) > float(p["pivot"]) > float(p["lo"])
@@ -163,6 +166,11 @@ def naturalna_value(p: dict, t: float) -> float:
 # 23% przy 12-18, 34% przy 18-27, ok. 60% przy 27-70); od smax (1,0 = podwojenie czasu) dalej stale, bo powyzej
 # 40 ms jest malo danych. Konce z Twojej gry: v_bot = 2 dla najwolniejszych 0,5% (208 ms), v_top = 127 dla
 # najmocniejszych 0,5% (A, 5,8 ms), 1% (B, 6,4 ms) albo 2% (C, 6,9 ms). Caly zakres to ok. 11 rozroznialnych poziomow.
+# 23.11: AX = A z wlasnym mnoznikiem czarnych 1,14. Zmierzony na grze 19-23.11 (38 832 nuty z Megi): w akordach z
+# czarnymi i bialymi naraz (295) czarny ma czas 1,13 raza dluzszy niz bialy, w sasiednich nutach melodii (2975 par)
+# 1,16; 95% przedzial 1,07-1,21. Stare 1,28 dawalo czarne za glosne (mediana 71-73 przy bialych 65-69), 1,0 za ciche
+# (krzywa X 20-22.11: 53 przy 62). Mozliwe, ze stosunek rosnie przy cichym graniu (ff ok. 1,0, mf 1,13, p ok. 1,25),
+# ale przedzial jeszcze obejmuje stala wartosc: sprawdzic po tygodniu gry.
 ROZRZUT = {"a": 0.0418, "b": 0.76, "smax": 1.0, "t_bot_us": 208400, "v_top": 127, "v_bot": 2}
 
 
@@ -188,7 +196,9 @@ def note_velocity_exact(midi: int, us: int, settings: dict) -> float:
     curve = settings["krzywe"][settings["krzywa"]]
     t = max(1, int(us))
     if midi % 12 in BLACK_KEYS:
-        t = t / float(settings.get("czarne_mnoznik", 1.0))
+        # Krzywa moze miec wlasny mnoznik czarnych (AX: 1,14 z pomiaru 23.11); inaczej wspolny czarne_mnoznik.
+        multiplier = curve.get("rozrzut", {}).get("czarne_mnoznik", settings.get("czarne_mnoznik", 1.0))
+        t = t / float(multiplier)
     v = curve_value(curve, t)
     return max(float(settings.get("minimum", 1)), min(127.0, v))
 

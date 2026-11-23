@@ -282,6 +282,7 @@ pub fn curve_name(c: &str) -> &'static str {
         "fortepian-pelny" => "FORTEPIAN PEŁNY",
         "naturalna" => "NATURALNA (MEGA)",
         "rowna-a" => "RÓWNA A (127 = 0,5%)",
+        "rowna-ax" => "RÓWNA AX (CZARNE 1,14)",
         "rowna-b" => "RÓWNA B (127 = 1%)",
         "rowna-c" => "RÓWNA C (127 = 2%)",
         _ => "FORTEPIAN ?",
@@ -294,6 +295,7 @@ fn curve_short(c: &str) -> &'static str {
         "fortepian-pelny" => "F.PEŁ",
         "naturalna" => "NATUR",
         "rowna-a" => "RÓW.A",
+        "rowna-ax" => "RÓW.AX",
         "rowna-b" => "RÓW.B",
         "rowna-c" => "RÓW.C",
         _ => "?",
@@ -669,7 +671,7 @@ fn lcd(ui: &mut egui::Ui, p: &egui::Painter, m: &Map, s: &LiveState, fresh: bool
         ("UNA CORDA", on_off(s.una_corda).into(), s.una_corda.map(|on| Command::UnaCorda(!on)), "Una corda (przycisk B48). Kliknij: włącz / wyłącz."),
         match mega {
             Some(mg) => ("CZUCIE", curve_name(&mg.curve).into(), Some(Command::MegaCurve(mg.next_curve())),
-                "Krzywa fortepianu dla klawiszy z Megi (przycisk C53): czas między stykami → velocity, wzór Bösendorfera (+25 na każde przepołowienie czasu). FORTEPIAN: najmocniejsze uderzenie ok. 100, jak prędkości z fortepianu. PEŁNY: to samo, ale najmocniejsze ok. 120. RÓWNA A/B/C: każdy krok velocity tak szeroki jak rozrzut Twojego odczytu w tym miejscu (zmierzony na akordach), więc każdy stopień równie pewny od ff do ppp; 2 = Twoje najwolniejsze 0,5% uderzeń, 127 = najmocniejsze 0,5% (A), 1% (B) albo 2% (C). NATURALNA: ta sama krzywa co Naturalna z zielonej płytki (logarytm prędkości klawisza, miękkie S jak filcowy młotek), ale z ciągłego czasu Megi: bez schodków, bez dziury czarnych i bez łatek na „1”. Kliknij: następna."),
+                "Krzywa fortepianu dla klawiszy z Megi (przycisk C53): czas między stykami → velocity, wzór Bösendorfera (+25 na każde przepołowienie czasu). FORTEPIAN: najmocniejsze uderzenie ok. 100, jak prędkości z fortepianu. PEŁNY: to samo, ale najmocniejsze ok. 120. RÓWNA A/AX/B/C: każdy krok velocity tak szeroki jak rozrzut Twojego odczytu w tym miejscu (zmierzony na akordach), więc każdy stopień równie pewny od ff do ppp; 2 = Twoje najwolniejsze 0,5% uderzeń, 127 = najmocniejsze 0,5% (A/AX), 1% (B) albo 2% (C). AX to A z mnożnikiem czarnych 1,14 zmierzonym na Twojej grze (pozostałe: 1,28). NATURALNA: ta sama krzywa co Naturalna z zielonej płytki (logarytm prędkości klawisza, miękkie S jak filcowy młotek), ale z ciągłego czasu Megi: bez schodków, bez dziury czarnych i bez łatek na „1”. Kliknij: następna."),
             None => ("CZUCIE", touch_name(s.touch.as_deref()).into(), Some(Command::Touch(next_touch(s.touch.as_deref()))), "Krzywa dynamiki routera (przycisk C53). Kliknij: następna."),
         },
         match mega {
@@ -781,10 +783,12 @@ fn screen(p: &egui::Painter, m: &Map, s: &LiveState, velo: &Velo, curves: &Curve
             p.text(m.p(xt(us), py1 + 22.0), Align2::CENTER_CENTER, label, m.font(MONO, 14.0), GREY);
         }
         let curve = |black: bool| -> Vec<Pos2> {
-            (0..=120)
+            // The router rounds exact velocity to an integer MIDI value. Plot that same quantized value so a
+            // note column (the actual sent integer) terminates on the curve instead of appearing fractionally above it.
+            (0..=720)
                 .map(|i| {
-                    let us = MEGA_SLOW_US * (MEGA_FAST_US / MEGA_SLOW_US).powf(i as f64 / 120.0);
-                    m.p(xt(us), y_of(mg.velocity(us, black) as f32))
+                    let us = MEGA_SLOW_US * (MEGA_FAST_US / MEGA_SLOW_US).powf(i as f64 / 720.0);
+                    m.p(xt(us), y_of(mg.velocity(us, black).round() as f32))
                 })
                 .collect()
         };
@@ -960,6 +964,8 @@ mod mega_photo_tests {
         assert_eq!(mega_x(MEGA_FAST_US), 1.0);
         assert!(mega_x(10_000.0) > mega_x(20_000.0));
         assert_eq!(curve_name("fortepian-pelny"), "FORTEPIAN PEŁNY");
+        assert_eq!(curve_name("rowna-ax"), "RÓWNA AX (CZARNE 1,14)");
+        assert_eq!(curve_short("rowna-ax"), "RÓW.AX");
         let mut s = LiveState::default();
         s.touch = Some("naturalna".into());
         assert_eq!(shown_touch(&s), "NATURALNA");

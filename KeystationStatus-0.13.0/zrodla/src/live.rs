@@ -116,7 +116,7 @@ pub enum MegaCurve {
     Naturalna { k: f64, tau: f64, lo: f64, hi: f64, floor: f64, top: f64, g: f64, pivot: f64 },
     /// 0.13.0: "rowna": każdy krok velocity tak szeroki jak rozrzut odczytu (log2-rozrzut = a * t_ms^b, od smax stały),
     /// jak mega_input.rozrzut_value
-    Rozrzut { a: f64, b: f64, smax: f64, top_ms: f64, bot_ms: f64, vtop: f64, vbot: f64 },
+    Rozrzut { a: f64, b: f64, smax: f64, top_ms: f64, bot_ms: f64, vtop: f64, vbot: f64, black: Option<f64> },
 }
 
 fn rozrzut_level(a: f64, b: f64, smax: f64, t_ms: f64) -> f64 {
@@ -133,8 +133,9 @@ impl MegaCurve {
             if !(top > 0.0 && bot > top) {
                 return None;
             }
+            let black = f("czarne_mnoznik").filter(|x| *x > 0.0);
             return Some(MegaCurve::Rozrzut { a: f("a")?, b: f("b")?, smax: f("smax")?, top_ms: top / 1000.0,
-                bot_ms: bot / 1000.0, vtop: f("v_top")?, vbot: f("v_bot")? });
+                bot_ms: bot / 1000.0, vtop: f("v_top")?, vbot: f("v_bot")?, black });
         }
         if let Some(p) = c.get("naturalna") {
             let f = |k: &str, d: Option<f64>| p.get(k).and_then(Value::as_f64).or(d);
@@ -169,7 +170,7 @@ impl MegaCurve {
                 let (x0, v0, x1, v1) = (p[i].0.log2(), p[i].1, p[i + 1].0.log2(), p[i + 1].1);
                 v0 + (v1 - v0) * (x - x0) / (x1 - x0)
             }
-            MegaCurve::Rozrzut { a, b, smax, top_ms, bot_ms, vtop, vbot } => {
+            MegaCurve::Rozrzut { a, b, smax, top_ms, bot_ms, vtop, vbot, .. } => {
                 let s0 = rozrzut_level(*a, *b, *smax, *top_ms);
                 let s1 = rozrzut_level(*a, *b, *smax, *bot_ms);
                 vtop - (vtop - vbot) * (rozrzut_level(*a, *b, *smax, t / 1000.0) - s0) / (s1 - s0)
@@ -193,6 +194,13 @@ impl MegaCurve {
                 }
                 floor + (top - floor) * n
             }
+        }
+    }
+
+    fn black_factor(&self) -> Option<f64> {
+        match self {
+            MegaCurve::Rozrzut { black, .. } => *black,
+            _ => None,
         }
     }
 }
@@ -224,7 +232,8 @@ impl Mega {
     pub fn velocity(&self, us: f64, black: bool) -> f64 {
         let fallback = MegaCurve::Anchor { us: 6500.0, vel: 100.0 };
         let c = self.curves.iter().find(|c| c.0 == self.curve).map(|c| &c.1).unwrap_or(&fallback);
-        let t = (if black { us / self.black } else { us }).max(1.0);
+        let black_factor = c.black_factor().unwrap_or(self.black);
+        let t = (if black { us / black_factor } else { us }).max(1.0);
         c.value(t).clamp(self.minimum, 127.0)
     }
 
@@ -622,6 +631,20 @@ mod mega_tests {
         assert!((a.value(6400.0) - 117.81885425275343).abs() < 1e-9);
         assert_eq!(m.velocity(1e6, false), 2.0);
         assert_eq!(m.next_curve(), "rowna-a");
+    }
+
+    #[test]
+    fn rowna_ax_is_a_with_its_own_black_key_multiplier() {
+        let s = LiveState::from_json_pub(&json!({"mega": {"connected": true, "curve": "rowna-ax", "black": 1.28, "minimum": 2,
+            "curves": {"rowna-a": {"rozrzut": {"a": 0.0418, "b": 0.76, "smax": 1.0, "t_top_us": 5800, "t_bot_us": 208400, "v_top": 127, "v_bot": 2}},
+                       "rowna-ax": {"rozrzut": {"a": 0.0418, "b": 0.76, "smax": 1.0, "t_top_us": 5800,
+                                                "t_bot_us": 208400, "v_top": 127, "v_bot": 2, "czarne_mnoznik": 1.14}}}}}));
+        let m = s.mega.as_ref().unwrap();
+        let a = &m.curves.iter().find(|c| c.0 == "rowna-a").unwrap().1;
+        // biale jak w A, czarne z mnoznikiem 1,14 (a nie wspolnym 1,28)
+        assert!((m.velocity(10_000.0, false) - a.value(10_000.0)).abs() < 1e-9);
+        assert!((m.velocity(11_400.0, true) - m.velocity(10_000.0, false)).abs() < 1e-6);
+        assert!(m.velocity(12_800.0, true) < m.velocity(10_000.0, false));
     }
 
     #[test]

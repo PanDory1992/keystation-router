@@ -467,14 +467,34 @@ def test_bad_curves_in_the_file_are_dropped(tmp_path):
     assert list(s["krzywe"]) == ["dobra"] and s["krzywa"] == "dobra"
 
 
-# --- 20.11 wieczor: krzywe "rowna" A, B, C (kazdy krok tak szeroki jak rozrzut odczytu) ------------------------
+# --- 20.11 wieczor: krzywe "rowna" A, AX, B, C (kazdy krok tak szeroki jak rozrzut odczytu) ---------------------
 def test_rowna_curves_values():
     for name, want in [("rowna-a", [124, 99, 84, 73, 61, 49, 40, 34, 27, 21, 17, 13, 9, 6, 3, 2]),
+                       ("rowna-ax", [124, 99, 84, 73, 61, 49, 40, 34, 27, 21, 17, 13, 9, 6, 3, 2]),
                        ("rowna-b", [127, 107, 90, 79, 66, 53, 43, 36, 29, 23, 18, 14, 10, 6, 3, 2]),
                        ("rowna-c", [127, 113, 96, 83, 70, 56, 46, 38, 31, 24, 19, 15, 10, 7, 3, 2])]:
         s = settings(name)
         got = [note_velocity(60, ms * 1000, s) for ms in (6, 8, 10, 12, 15, 20, 26, 33, 44, 60, 80, 100, 130, 160, 200, 250)]
         assert got == want, name
+
+
+def test_rowna_ax_is_a_with_measured_black_key_multiplier():
+    """23.11: AX = A na bialych, czarne z mnoznikiem 1,14 (pomiar z gry 19-23.11) zamiast wspolnego 1,28."""
+    s_a, s_ax = settings("rowna-a"), settings("rowna-ax")
+    for us in (5000, 5800, 10_000, 20_000, 50_000, 200_000):
+        assert note_velocity(60, us, s_ax) == note_velocity(60, us, s_a)
+    # czarny z czasem 1,14 raza dluzszym gra tak samo jak bialy
+    for us in (6000, 10_000, 20_000, 60_000):
+        assert note_velocity(61, int(us * 1.14), s_ax) == note_velocity(60, us, s_ax)
+    assert note_velocity(61, 10_000, s_ax) == 93          # A (1,28): 101, bez mnoznika: 84
+    assert note_velocity(61, 10_000, s_a) == 101
+    assert "rowna-x" not in mega_input.DEFAULT_CURVES
+
+
+def test_curve_multiplier_must_be_positive():
+    bad = json.loads(json.dumps(mega_input.DEFAULT_CURVES["rowna-ax"]))
+    bad["rozrzut"]["czarne_mnoznik"] = 0
+    assert not mega_input.curve_ok(bad) and mega_input.curve_ok(mega_input.DEFAULT_CURVES["rowna-ax"])
 
 
 def test_rowna_steps_are_as_wide_as_the_scatter():
