@@ -1,0 +1,22 @@
+[package]
+name = "dzwiek_do_glosnikow"
+version = "0.2.0"
+edition = "2021"
+description = "Sends one Studio One channel to a second Windows playback device (shared WASAPI, low latency), so ASIO4ALL keeps only the main interface"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git", default-features = false, features = ["vst3"] }
+nih_plug_egui = { git = "https://github.com/robbert-vdh/nih-plug.git" }
+rtrb = "0.3"
+rubato = "5.1"
+
+[target.'cfg(windows)'.dependencies]
+wasapi = "0.27"
+windows = { version = "0.62.2", features = ["Win32_Foundation", "Win32_System_Threading"] }
+
+[profile.release]
+lto = "thin"
+strip = "symbols"

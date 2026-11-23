@@ -1,0 +1,50 @@
+Dźwięk do Głośników 0.2.0 (23.11.2026)
+
+CO TO ROBI
+Wysyła jeden kanał Studio One na drugie wyjście Windows, np. na Geniusy podpięte do karty płyty
+głównej. ASIO4ALL zostaje tylko z UM2, więc bufor pianina (128) i jego opóźnienie się nie zmieniają.
+Typowe użycie: pianino gra z Microlabów (UM2), a sala (pogłos) z Geniusów stojących gdzie indziej
+w pokoju. Wtedy pokój brzmi jak sala, a nie jak dwa głośniki.
+
+USTAWIENIE (raz)
+1. Zamknij Studio One. Kliknij dwa razy "Zainstaluj Dzwiek do Glosnikow.bat" (zapyta o administratora).
+2. ASIO4ALL: dalej TYLKO UM2. Geniusów (karta płyty głównej) NIE włączaj w ASIO4ALL.
+3. Studio One: dodaj kanał FX, np. "Geniusy". Na nim inserty: najpierw pogłos (np. ValhallaVintageVerb,
+   Mix 100%), a na samym końcu "Dzwiek do Glosnikow".
+4. Z kanału pianina (albo Pianino Bus) zrób wysyłkę (Send) do kanału "Geniusy".
+5. W oknie wtyczki wybierz głośniki (domyślnie: wyjście karty płyty głównej, nigdy UM2).
+   Kliknij "Test: dźwięk na głośnikach": przez chwilę zagra ton 440 Hz z wybranych głośników.
+
+CO ZNACZĄ USTAWIENIA
+- Poziom: głośność wysyłki na Geniusy.
+- Zapas: auto (zalecane). Wtyczka trzyma najmniejszy zapas, przy którym nie ma przerw. Gdy zdarzy się
+  przerwa, sama doda 2 ms. Ręcznie: 4-10 ms.
+- Też do Main: wyłączone = ten kanał gra TYLKO z Geniusów. Włącz, gdy grasz na słuchawkach, inaczej
+  w słuchawkach nie usłyszysz sali.
+
+CO POKAZUJE OKNO
+- "Gra do: ..." na zielono: wszystko dobrze.
+- Opóźnienie tej drogi: ile ms Geniusy grają po tym, jak dźwięk wyjdzie z wtyczki. Typowo 12-25 ms.
+  Sala przychodzi więc trochę później niż pianino z UM2. Możesz to wyrównać: zmniejsz predelay pogłosu
+  o mniej więcej tę liczbę minus 6 ms (tyle ma droga przez UM2).
+- Korekta zegara: UM2 i karta płyty głównej mają osobne zegary. Wtyczka wyrównuje różnicę, zwykle
+  kilkadziesiąt do kilkuset ppm. Tego nie słychać (100 ppm to 0,17 centa).
+- Przerwy: dźwięk zabrakło na chwilę. Przy "auto" po 1-2 przerwach zapas się ustawia i przerwy znikają.
+- Przeskoki: Windows zaciął się na dłużej, a zaległy dźwięk został wyrzucony, żeby opóźnienie nie urosło.
+- "BEZ priorytetu audio": Windows nie dał wątkowi priorytetu MMCSS. Zdarza się bardzo rzadko; daj znać.
+- Tryb niskiego opóźnienia: karta pozwala na okres 3-5 ms zamiast zwykłych 10 ms.
+
+W MIKSERZE WINDOWS
+Wysyłka widnieje jako "Studio One: Dźwięk do Głośników". Tam też można ją ściszyć.
+
+GDY COŚ NIE GRA
+- "to UM2: trzyma go ASIO4ALL": wybrano UM2. Wybierz wyjście karty płyty głównej.
+- "wybranych głośników teraz nie ma": głośniki odłączone albo wyłączone w Windows. Wtyczka sama
+  sprawdza co 3 s i wróci, gdy się pojawią.
+- Przerwy stale rosną: w Studio One sprawdź Opcje > Audio > Ochrona przed przerwami (Dropout Protection)
+  na Minimum. Przy wyższych ustawieniach Studio One oddaje dźwięk dużymi paczkami.
+
+ŹRÓDŁA I TESTY
+zrodla/ (Rust: nih-plug, wasapi, rubato). Testy (10) symulują dwa zegary z dryfem, nierówne bloki
+Studio One, zacięcia Windows i ciszę w Studio One, a także mierzą czystość przeliczania (sinus 1 kHz,
+SNR ok. 91 dB). "Zbuduj Dzwiek do Glosnikow.bat" najpierw puszcza testy, potem buduje.
