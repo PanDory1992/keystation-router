@@ -33,3 +33,6 @@ skaner-mega/**/__pycache__/
 # Stan suwakow (zapisuje router) i kopie calego repo
 controls.json
 *.bundle
+
+# Do recznego usuniecia
+_to_delete/
