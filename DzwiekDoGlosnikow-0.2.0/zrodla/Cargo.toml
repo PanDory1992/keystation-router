@@ -1,6 +1,6 @@
 [package]
 name = "dzwiek_do_glosnikow"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 description = "Sends one Studio One channel to a second Windows playback device (shared WASAPI, low latency), so ASIO4ALL keeps only the main interface"
 

@@ -24,7 +24,7 @@ pub fn style(ctx: &egui::Context) {
 pub fn draw(ctx: &egui::Context, setter: &ParamSetter, params: &Arc<SendParams>, shared: &Arc<Shared>) {
     egui::CentralPanel::default().show(ctx, |ui| {
         ui.spacing_mut().item_spacing = egui::vec2(8.0, 7.0);
-        ui.label(RichText::new("DŹWIĘK DO GŁOŚNIKÓW 0.2").size(13.0).color(MUTED));
+        ui.label(RichText::new("DŹWIĘK DO GŁOŚNIKÓW 0.2.1").size(13.0).color(MUTED));
 
         let devices = shared.devices.lock().map(|d| d.clone()).unwrap_or_default();
         let current = shared.wanted.lock().map(|w| w.clone()).unwrap_or_default();
@@ -41,7 +41,13 @@ pub fn draw(ctx: &egui::Context, setter: &ParamSetter, params: &Arc<SendParams>,
                     choose(params, shared, "");
                 }
                 for d in &devices {
-                    let label = if d.is_asio_interface() { format!("{} (UM2, zajęty przez ASIO)", d.name) } else { d.name.clone() };
+                    let label = if d.is_asio_interface() {
+                        format!("{} (UM2, zajęty przez ASIO)", d.name)
+                    } else if d.is_not_speakers() {
+                        format!("{} (cyfrowe/wirtualne)", d.name)
+                    } else {
+                        d.name.clone()
+                    };
                     if ui.selectable_label(d.key() == current, label).clicked() {
                         choose(params, shared, &d.key());
                     }

@@ -124,16 +124,39 @@ impl Shared {
     }
 }
 
-/// Domyślne głośniki, gdy nic nie wybrano: analogowe wyjście karty płyty głównej (u Mikiego Geniusy),
-/// nigdy UM2. Pierwsze pasujące według kolejności nazw.
-pub fn default_device(list: &[DeviceInfo]) -> Option<DeviceInfo> {
-    let prefs = ["high definition audio device", "realtek", "głośniki", "speakers"];
-    for p in prefs {
-        if let Some(d) = list.iter().find(|d| !d.is_asio_interface() && d.name.to_lowercase().contains(p)) {
-            return Some(d.clone());
-        }
+impl DeviceInfo {
+    /// Wyjścia, które nie są głośnikami analogowymi: cyfrowe (S/PDIF, HDMI, monitor), wirtualne kable.
+    /// 23.11: karta płyty głównej ma też „Digital Audio (S/PDIF) (High Definition Audio Device)”,
+    /// a 0.2.0 wybierała je, bo pasowało do „high definition audio device”. Test grał w pusty kabel.
+    pub fn is_not_speakers(&self) -> bool {
+        let n = self.name.to_lowercase();
+        ["digital", "s/pdif", "spdif", "hdmi", "displayport", "nvidia", "amd high definition", "intel(r) display",
+         "cable", "virtual", "voicemeeter", "headset", "zestaw słuchawkowy"]
+            .iter()
+            .any(|w| n.contains(w))
     }
-    None
+}
+
+/// Domyślne głośniki, gdy nic nie wybrano: analogowe wyjście karty płyty głównej (u Mikiego Geniusy),
+/// nigdy UM2, nigdy wyjście cyfrowe. Najpierw nazwa „Głośniki/Speakers” na karcie płyty głównej,
+/// potem dowolne „Głośniki/Speakers”, potem cokolwiek z karty płyty głównej.
+pub fn default_device(list: &[DeviceInfo]) -> Option<DeviceInfo> {
+    let ok = |d: &&DeviceInfo| !d.is_asio_interface() && !d.is_not_speakers();
+    let lower = |d: &DeviceInfo| d.name.to_lowercase();
+    let speakers = |d: &DeviceInfo| {
+        let n = lower(d);
+        n.contains("głośniki") || n.contains("speakers") || n.contains("line out") || n.contains("wyjście liniowe")
+    };
+    let onboard = |d: &DeviceInfo| {
+        let n = lower(d);
+        n.contains("high definition audio") || n.contains("realtek")
+    };
+    list.iter()
+        .filter(ok)
+        .find(|d| speakers(d) && onboard(d))
+        .or_else(|| list.iter().filter(ok).find(|d| speakers(d)))
+        .or_else(|| list.iter().filter(ok).find(|d| onboard(d)))
+        .cloned()
 }
 
 #[cfg(test)]
@@ -152,5 +175,21 @@ mod tests {
         assert!(default_device(&only_um2).is_none());
         let polish = vec![d("Głośniki (Realtek(R) Audio)")];
         assert_eq!(default_device(&polish).unwrap().name, "Głośniki (Realtek(R) Audio)");
+    }
+
+    #[test]
+    fn digital_outputs_are_never_chosen_by_default() {
+        // kolejność jak w Windows u Mikiego 23.11: S/PDIF przed głośnikami
+        let list = vec![
+            d("Digital Audio (S/PDIF) (High Definition Audio Device)"),
+            d("Speakers (USB Audio CODEC)"),
+            d("Speakers (High Definition Audio Device)"),
+            d("CABLE Input (VB-Audio Virtual Cable)"),
+        ];
+        assert_eq!(default_device(&list).unwrap().name, "Speakers (High Definition Audio Device)");
+        let only_digital = vec![d("Digital Audio (S/PDIF) (High Definition Audio Device)"), d("LG TV (NVIDIA High Definition Audio)")];
+        assert!(default_device(&only_digital).is_none());
+        let pl = vec![d("Cyfrowe audio (S/PDIF) (High Definition Audio Device)"), d("Głośniki (High Definition Audio Device)")];
+        assert_eq!(default_device(&pl).unwrap().name, "Głośniki (High Definition Audio Device)");
     }
 }

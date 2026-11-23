@@ -1,4 +1,5 @@
-Dźwięk do Głośników 0.2.0 (23.11.2026)
+Dźwięk do Głośników 0.2.1 (23.11.2026)
+0.2.1: sama nigdy nie wybiera wyjścia cyfrowego (S/PDIF, HDMI). 0.2.0 brała S/PDIF i test był cichy.
 
 CO TO ROBI
 Wysyła jeden kanał Studio One na drugie wyjście Windows, np. na Geniusy podpięte do karty płyty
@@ -12,7 +13,8 @@ USTAWIENIE (raz)
 3. Studio One: dodaj kanał FX, np. "Geniusy". Na nim inserty: najpierw pogłos (np. ValhallaVintageVerb,
    Mix 100%), a na samym końcu "Dzwiek do Glosnikow".
 4. Z kanału pianina (albo Pianino Bus) zrób wysyłkę (Send) do kanału "Geniusy".
-5. W oknie wtyczki wybierz głośniki (domyślnie: wyjście karty płyty głównej, nigdy UM2).
+5. W oknie wtyczki wybierz głośniki: wyjście z „Głośniki”/„Speakers” w nazwie (domyślnie analogowe
+   wyjście karty płyty głównej, nigdy UM2 ani S/PDIF).
    Kliknij "Test: dźwięk na głośnikach": przez chwilę zagra ton 440 Hz z wybranych głośników.
 
 CO ZNACZĄ USTAWIENIA
